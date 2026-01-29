@@ -24,12 +24,12 @@ import { useProperties } from '@/contexts/PropertyContext';
 import { Property } from '@/data/mockProperties';
 
 const propertyCategories = [
-  { icon: Building2, label: 'Apartment', count: 245 },
-  { icon: Home, label: 'House', count: 182 },
-  { icon: Building, label: 'Villa', count: 67 },
-  { icon: TreePine, label: 'Plot/Land', count: 134 },
-  { icon: Warehouse, label: 'Commercial', count: 89 },
-  { icon: Users, label: 'PG / Hostels', count: 56 },
+  { icon: Building2, label: 'Apartment' },
+  { icon: Home, label: 'House' },
+  { icon: Building, label: 'Villa' },
+  { icon: TreePine, label: 'Plot/Land' },
+  { icon: Warehouse, label: 'Commercial' },
+  { icon: Users, label: 'PG / Hostels' },
 ];
 
 export default function Index() {
@@ -306,7 +306,7 @@ export default function Index() {
                   <category.icon className="w-8 h-8 text-primary group-hover:text-primary-foreground transition-colors" />
                 </div>
                 <h3 className="font-semibold text-foreground mb-1">{category.label}</h3>
-                <p className="text-sm text-muted-foreground">{category.count}+ properties</p>
+                <p className="text-sm text-muted-foreground">Browse Listings</p>
               </Link>
             ))}
           </div>

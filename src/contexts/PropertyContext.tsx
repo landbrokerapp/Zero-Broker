@@ -49,16 +49,12 @@ export function PropertyProvider({ children }: { children: ReactNode }) {
 
         if (error) throw error;
 
-        if (data && data.length > 0) {
-          // Map database names to Property interface if needed
+        if (data) {
           setProperties(data as Property[]);
-        } else {
-          // If DB is empty, use mock data
-          setProperties(mockProperties);
         }
       } catch (err) {
         console.error('Error fetching properties:', err);
-        setProperties(mockProperties);
+        setProperties([]);
       } finally {
         setLoading(false);
       }
