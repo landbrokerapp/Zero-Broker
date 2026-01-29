@@ -75,12 +75,8 @@ export default function AdminPostProperty() {
             if (selectedFiles.length > 0) {
                 toast.info(`Uploading ${selectedFiles.length} images...`);
                 for (const file of selectedFiles) {
-                    try {
-                        const url = await uploadToCloudinary(file);
-                        uploadedImageUrls.push(url);
-                    } catch (uploadError) {
-                        console.error('Individual image upload failed:', uploadError);
-                    }
+                    const url = await uploadToCloudinary(file);
+                    uploadedImageUrls.push(url);
                 }
             }
 
