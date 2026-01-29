@@ -45,12 +45,43 @@ export function PropertyProvider({ children }: { children: ReactNode }) {
         const { data, error } = await supabase
           .from('properties')
           .select('*')
-          .order('postedDate', { ascending: false });
+          .order('posted_date', { ascending: false });
 
         if (error) throw error;
 
         if (data) {
-          setProperties(data as Property[]);
+          // Map snake_case from DB to camelCase for the UI
+          const mappedData = data.map((item: any) => ({
+            id: item.id,
+            title: item.title,
+            type: item.type,
+            intent: item.intent,
+            price: item.price,
+            priceUnit: item.price_unit,
+            locality: item.locality,
+            city: item.city,
+            bhk: item.bhk,
+            furnishing: item.furnishing,
+            builtUpArea: item.built_up_area,
+            carpetArea: item.carpet_area,
+            floor: item.floor,
+            totalFloors: item.total_floors,
+            facing: item.facing,
+            parking: item.parking,
+            maintenanceCharges: item.maintenance_charges,
+            ownershipType: item.ownership_type,
+            amenities: item.amenities,
+            images: item.images,
+            verified: item.verified,
+            postedDate: item.posted_date,
+            description: item.description,
+            sellerId: item.seller_id,
+            sellerName: item.seller_name,
+            sellerPhone: item.seller_phone,
+            pgType: item.pg_type,
+            coordinates: item.coordinates
+          }));
+          setProperties(mappedData as Property[]);
         }
       } catch (err) {
         console.error('Error fetching properties:', err);
@@ -80,11 +111,35 @@ export function PropertyProvider({ children }: { children: ReactNode }) {
     const newId = `prop_${Date.now()}`;
     const postedDate = new Date().toISOString().split('T')[0];
 
-    const newProperty: Property = {
-      ...propertyData,
+    const newProperty = {
       id: newId,
-      postedDate: postedDate,
+      title: propertyData.title,
+      type: propertyData.type,
+      intent: propertyData.intent,
+      price: propertyData.price,
+      price_unit: propertyData.priceUnit,
+      locality: propertyData.locality,
+      city: propertyData.city,
+      bhk: propertyData.bhk,
+      furnishing: propertyData.furnishing,
+      built_up_area: propertyData.builtUpArea,
+      carpet_area: propertyData.carpetArea,
+      floor: propertyData.floor,
+      total_floors: propertyData.totalFloors,
+      facing: propertyData.facing,
+      parking: propertyData.parking,
+      maintenance_charges: propertyData.maintenanceCharges,
+      ownership_type: propertyData.ownershipType,
+      amenities: propertyData.amenities,
+      images: propertyData.images,
       verified: verified,
+      posted_date: postedDate,
+      description: propertyData.description,
+      seller_id: propertyData.sellerId,
+      seller_name: propertyData.sellerName,
+      seller_phone: propertyData.sellerPhone,
+      pg_type: propertyData.pgType,
+      coordinates: propertyData.coordinates
     };
 
     try {
@@ -94,17 +149,23 @@ export function PropertyProvider({ children }: { children: ReactNode }) {
 
       if (error) throw error;
 
-      setProperties((prev) => [newProperty, ...prev]);
+      // Add to local state using the Property interface (camelCase)
+      const stateProperty: Property = {
+        ...propertyData,
+        id: newId,
+        postedDate: postedDate,
+        verified: verified,
+      };
+
+      setProperties((prev) => [stateProperty, ...prev]);
       setUserPropertyIds((prev) => {
-        const updated = [newProperty.id, ...prev];
+        const updated = [newId, ...prev];
         localStorage.setItem('zerobroker_user_properties', JSON.stringify(updated));
         return updated;
       });
     } catch (err) {
       console.error('Error adding property to Supabase:', err);
-      // Still update locally so the user sees it in their session
-      setProperties((prev) => [newProperty, ...prev]);
-      throw err; // Rethrow to let the UI know it failed to sync with the cloud
+      throw err;
     }
   };
 
