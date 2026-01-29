@@ -45,7 +45,7 @@ export function PropertyProvider({ children }: { children: ReactNode }) {
         const { data, error } = await supabase
           .from('properties')
           .select('*')
-          .order('posted_date', { ascending: false });
+          .order('postedDate', { ascending: false });
 
         if (error) throw error;
 
@@ -55,6 +55,7 @@ export function PropertyProvider({ children }: { children: ReactNode }) {
       } catch (err) {
         console.error('Error fetching properties:', err);
         setProperties([]);
+        toast.error('Failed to connect to the database. Listings may be unavailable.');
       } finally {
         setLoading(false);
       }
