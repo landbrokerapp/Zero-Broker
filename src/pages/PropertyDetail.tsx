@@ -203,51 +203,6 @@ export default function PropertyDetail() {
               </p>
             </div>
 
-            {/* Location Map */}
-            {property.coordinates && (
-              <div className="bg-card rounded-2xl p-6 border border-border">
-                <h2 className="font-display text-xl font-semibold text-foreground mb-6">
-                  Location
-                </h2>
-                <div className="space-y-4">
-                  <div className="flex items-start gap-2 text-muted-foreground mb-4">
-                    <MapPin className="w-5 h-5 text-accent mt-0.5" />
-                    <div>
-                      <p className="font-medium text-foreground">{property.locality}, {property.city}</p>
-                      <p className="text-sm">Tamil Nadu, India</p>
-                    </div>
-                  </div>
-
-                  <div className="relative rounded-xl overflow-hidden border border-border">
-                    <PropertyMap properties={[property]} className="h-[400px]" />
-                  </div>
-
-                  <div className="flex gap-3">
-                    <Button
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => {
-                        const url = `https://www.google.com/maps/search/?api=1&query=${property.coordinates!.lat},${property.coordinates!.lng}`;
-                        window.open(url, '_blank');
-                      }}
-                    >
-                      <MapPin className="w-4 h-4 mr-2" />
-                      View Larger Map
-                    </Button>
-                    <Button
-                      className="flex-1 bg-primary hover:bg-primary/90"
-                      onClick={() => {
-                        const url = `https://www.google.com/maps/dir/?api=1&destination=${property.coordinates!.lat},${property.coordinates!.lng}`;
-                        window.open(url, '_blank');
-                      }}
-                    >
-                      <Compass className="w-4 h-4 mr-2" />
-                      Get Directions
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* Amenities */}
             <div className="bg-card rounded-2xl p-6 border border-border">

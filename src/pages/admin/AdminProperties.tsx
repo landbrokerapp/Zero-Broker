@@ -39,15 +39,23 @@ export default function AdminProperties() {
         p.id.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const handleVerify = (id: string) => {
-        verifyProperty(id);
-        toast.success('Property verified successfully');
+    const handleVerify = async (id: string) => {
+        try {
+            await verifyProperty(id);
+            toast.success('Property verified successfully');
+        } catch (error) {
+            toast.error('Failed to verify property');
+        }
     };
 
-    const handleDelete = (id: string) => {
+    const handleDelete = async (id: string) => {
         if (confirm('Are you sure you want to delete this listing?')) {
-            deleteProperty(id);
-            toast.success('Listing removed');
+            try {
+                await deleteProperty(id);
+                toast.success('Listing removed');
+            } catch (error) {
+                toast.error('Failed to delete property');
+            }
         }
     };
 

@@ -33,7 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = (username: string, password: string) => {
     // Check for admin credentials
-    if (username === 'SHANMU' && password === '123456') {
+    if (username === 'Shanmu' && password === '123456') {
       const newUser: User = {
         id: 'admin-1',
         name: 'Shanmu',

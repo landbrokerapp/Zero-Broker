@@ -5,6 +5,8 @@ import {
   Car, Compass, Image as ImageIcon, CheckCircle, ArrowLeft, X, ArrowRight, Droplets
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { uploadToCloudinary } from '@/lib/cloudinary';
+
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -30,6 +32,9 @@ export default function PostProperty() {
   const [step, setStep] = useState(1);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+
 
   const [formData, setFormData] = useState({
     title: '',
@@ -84,6 +89,7 @@ export default function PostProperty() {
     });
 
     validFiles.forEach(file => {
+      setSelectedFiles(prev => [...prev, file]);
       const reader = new FileReader();
       reader.onloadend = () => {
         setFormData(prev => ({
@@ -96,11 +102,13 @@ export default function PostProperty() {
   };
 
   const removeImage = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
     setFormData(prev => ({
       ...prev,
       images: prev.images.filter((_, i) => i !== index)
     }));
   };
+
 
   const toggleAmenity = (amenity: string) => {
     setFormData((prev) => ({
@@ -111,7 +119,7 @@ export default function PostProperty() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formData.title || !formData.price || !formData.locality) {
@@ -119,41 +127,59 @@ export default function PostProperty() {
       return;
     }
 
-    if (formData.images.length === 0) {
+    if (selectedFiles.length === 0) {
       toast.error('Please upload at least one image.');
       return;
     }
 
-    const propertyData: Omit<Property, 'id' | 'postedDate' | 'verified'> = {
-      title: formData.title,
-      type: formData.type as Property['type'],
-      intent: formData.intent as Property['intent'],
-      price: parseInt(formData.price),
-      priceUnit: formData.intent === 'buy' ? 'total' : 'month',
-      locality: formData.locality,
-      city: 'Coimbatore',
-      bhk: formData.bhk,
-      furnishing: formData.furnishing as Property['furnishing'],
-      builtUpArea: parseInt(formData.builtUpArea),
-      carpetArea: parseInt(formData.carpetArea),
-      floor: formData.floor,
-      totalFloors: parseInt(formData.totalFloors),
-      facing: formData.facing,
-      parking: formData.parking,
-      ownershipType: formData.ownershipType as Property['ownershipType'],
-      amenities: formData.amenities,
-      images: formData.images,
-      description: formData.description,
-      sellerId: user?.id || '',
-      sellerName: user?.name || 'Property Owner',
-      sellerPhone: user?.phone || '',
-      coordinates: formData.coordinates || undefined,
-    };
+    setIsUploading(true);
+    try {
+      // 1. Upload to Cloudinary
+      const uploadedImageUrls: string[] = [];
+      toast.info(`Uploading ${selectedFiles.length} images...`);
+      for (const file of selectedFiles) {
+        const url = await uploadToCloudinary(file);
+        uploadedImageUrls.push(url);
+      }
 
-    addProperty(propertyData);
-    setIsSubmitted(true);
-    toast.success('Property submitted successfully!');
+      // 2. Prepare Data
+      const propertyData: Omit<Property, 'id' | 'postedDate' | 'verified'> = {
+        title: formData.title,
+        type: formData.type as Property['type'],
+        intent: formData.intent as Property['intent'],
+        price: parseInt(formData.price),
+        priceUnit: formData.intent === 'buy' ? 'total' : 'month',
+        locality: formData.locality,
+        city: 'Coimbatore',
+        bhk: formData.bhk,
+        furnishing: formData.furnishing as Property['furnishing'],
+        builtUpArea: parseInt(formData.builtUpArea),
+        carpetArea: parseInt(formData.carpetArea),
+        floor: formData.floor,
+        totalFloors: parseInt(formData.totalFloors),
+        facing: formData.facing,
+        parking: formData.parking,
+        ownershipType: formData.ownershipType as Property['ownershipType'],
+        amenities: formData.amenities,
+        images: uploadedImageUrls,
+        description: formData.description,
+        sellerId: user?.id || '',
+        sellerName: user?.name || 'Property Owner',
+        sellerPhone: user?.phone || '',
+        coordinates: formData.coordinates || undefined,
+      };
+
+      addProperty(propertyData);
+      setIsSubmitted(true);
+      toast.success('Property submitted successfully!');
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('Failed to upload images. Please check your connection.');
+    } finally {
+      setIsUploading(false);
+    }
   };
+
 
   if (isSubmitted) {
     return (
@@ -376,61 +402,112 @@ export default function PostProperty() {
               </div>
             )}
 
-            {/* Step 2: Technical Specifications */}
+            {/* Step 2: Property Overview Details */}
             {step === 2 && (
               <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-semibold">BHK Configuration</Label>
-                    <Select value={formData.bhk} onValueChange={(v) => updateFormData('bhk', v)}>
-                      <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-border/50">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl shadow-xl">
-                        {['1 RK', '1 BHK', '2 BHK', '3 BHK', '4 BHK', '5 BHK'].map(b => (
-                          <SelectItem key={b} value={b}>{b}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-semibold">Furnishing State</Label>
-                    <Select value={formData.furnishing} onValueChange={(v) => updateFormData('furnishing', v)}>
-                      <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-border/50">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl shadow-xl">
-                        {['unfurnished', 'semi-furnished', 'fully-furnished'].map(f => (
-                          <SelectItem key={f} value={f} className="capitalize">{f.replace('-', ' ')}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-semibold">Built-up Area (sq.ft)</Label>
-                    <div className="relative">
-                      <Maximize className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <div className="space-y-6">
+                  <h2 className="text-xl font-bold flex items-center gap-2">
+                    <Maximize className="w-5 h-5 text-primary" />
+                    Property Overview Details
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-muted/20 rounded-3xl border border-border/50">
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold">BHK Configuration</Label>
+                      <Select value={formData.bhk} onValueChange={(v) => updateFormData('bhk', v)}>
+                        <SelectTrigger className="h-12 rounded-xl bg-background border-border/50">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl shadow-xl">
+                          {['1 RK', '1 BHK', '2 BHK', '3 BHK', '4 BHK', '5 BHK'].map(b => (
+                            <SelectItem key={b} value={b}>{b}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold">Furnishing State</Label>
+                      <Select value={formData.furnishing} onValueChange={(v) => updateFormData('furnishing', v)}>
+                        <SelectTrigger className="h-12 rounded-xl bg-background border-border/50">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl shadow-xl">
+                          {['unfurnished', 'semi-furnished', 'fully-furnished'].map(f => (
+                            <SelectItem key={f} value={f} className="capitalize">{f.replace('-', ' ')}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold">Built-up Area (sq.ft)</Label>
+                      <div className="relative">
+                        <Maximize className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          type="number"
+                          placeholder="e.g. 1200"
+                          className="h-12 pl-10 rounded-xl bg-background border-border/50"
+                          value={formData.builtUpArea}
+                          onChange={(e) => updateFormData('builtUpArea', e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold">Carpet Area (sq.ft)</Label>
+                      <div className="relative">
+                        <Maximize className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          type="number"
+                          placeholder="e.g. 1000"
+                          className="h-12 pl-10 rounded-xl bg-background border-border/50"
+                          value={formData.carpetArea}
+                          onChange={(e) => updateFormData('carpetArea', e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold">Floor</Label>
                       <Input
-                        type="number"
-                        placeholder="e.g. 1200"
-                        className="h-12 pl-10 rounded-xl bg-muted/30 border-border/50"
-                        value={formData.builtUpArea}
-                        onChange={(e) => updateFormData('builtUpArea', e.target.value)}
+                        placeholder="e.g. 3rd"
+                        className="h-12 rounded-xl bg-background border-border/50"
+                        value={formData.floor}
+                        onChange={(e) => updateFormData('floor', e.target.value)}
                       />
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-semibold">Facing Direction</Label>
-                    <Select value={formData.facing} onValueChange={(v) => updateFormData('facing', v)}>
-                      <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-border/50">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl shadow-xl">
-                        {['East', 'West', 'North', 'South', 'North-East', 'North-West', 'South-East', 'South-West'].map(d => (
-                          <SelectItem key={d} value={d}>{d}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold">Total Floors</Label>
+                      <Input
+                        type="number"
+                        placeholder="e.g. 5"
+                        className="h-12 rounded-xl bg-background border-border/50"
+                        value={formData.totalFloors}
+                        onChange={(e) => updateFormData('totalFloors', e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold">Facing Direction</Label>
+                      <Select value={formData.facing} onValueChange={(v) => updateFormData('facing', v)}>
+                        <SelectTrigger className="h-12 rounded-xl bg-background border-border/50">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl shadow-xl">
+                          {['East', 'West', 'North', 'South', 'North-East', 'North-West', 'South-East', 'South-West'].map(d => (
+                            <SelectItem key={d} value={d}>{d}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold">Parking</Label>
+                      <Select value={formData.parking} onValueChange={(v) => updateFormData('parking', v)}>
+                        <SelectTrigger className="h-12 rounded-xl bg-background border-border/50">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl shadow-xl">
+                          {['None', 'Open', '1 Covered', '2 Covered', '3+ Covered'].map(p => (
+                            <SelectItem key={p} value={p}>{p}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
 
@@ -439,17 +516,20 @@ export default function PostProperty() {
                     Previous
                   </Button>
                   <Button type="button" onClick={() => setStep(3)} className="flex-[2] h-14 text-lg font-bold bg-primary rounded-2xl">
-                    Next Step
+                    Continue to Features
                   </Button>
                 </div>
               </div>
             )}
 
-            {/* Step 3: Amenities & Final Touches */}
+            {/* Step 3: About Property & Amenities */}
             {step === 3 && (
-              <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
+              <div className="space-y-10 animate-in fade-in slide-in-from-right-4 duration-500">
                 <div className="space-y-6">
-                  <Label className="text-lg font-bold block mb-4">Select Amenities Available</Label>
+                  <h2 className="text-xl font-bold flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5 text-primary" />
+                    Amenities
+                  </h2>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {[
                       { icon: Car, label: 'Parking' },
@@ -477,14 +557,20 @@ export default function PostProperty() {
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  <Label className="text-sm font-semibold ml-1">Description (Optional)</Label>
-                  <Textarea
-                    placeholder="Describe your property's unique features, neighborhood, etc."
-                    className="min-h-[150px] rounded-2xl bg-muted/30 border-border/50 p-4 focus:bg-white dark:focus:bg-neutral-900 transition-all text-base"
-                    value={formData.description}
-                    onChange={(e) => updateFormData('description', e.target.value)}
-                  />
+                <div className="space-y-6">
+                  <h2 className="text-xl font-bold flex items-center gap-2">
+                    <Building2 className="w-5 h-5 text-primary" />
+                    About this property
+                  </h2>
+                  <div className="space-y-3">
+                    <Label className="text-sm font-semibold ml-1">Detailed Description *</Label>
+                    <Textarea
+                      placeholder="Describe your property's unique features, neighborhood, etc."
+                      className="min-h-[150px] rounded-2xl bg-muted/30 border-border/50 p-4 focus:bg-white dark:focus:bg-neutral-900 transition-all text-base"
+                      value={formData.description}
+                      onChange={(e) => updateFormData('description', e.target.value)}
+                    />
+                  </div>
                 </div>
 
                 <div className="flex gap-4 pt-4">
@@ -492,7 +578,7 @@ export default function PostProperty() {
                     Back
                   </Button>
                   <Button type="submit" className="flex-[2] h-14 text-xl font-bold bg-green-600 hover:bg-green-700 text-white rounded-2xl shadow-xl shadow-green-500/20 transition-all hover:-translate-y-1">
-                    Publish My Property
+                    Submit for Verification
                   </Button>
                 </div>
               </div>
