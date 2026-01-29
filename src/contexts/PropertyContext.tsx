@@ -105,9 +105,9 @@ export function PropertyProvider({ children }: { children: ReactNode }) {
       });
     } catch (err) {
       console.error('Error adding property to Supabase:', err);
-      // Fallback for demo purposes if DB not setup
+      // Still update locally so the user sees it in their session
       setProperties((prev) => [newProperty, ...prev]);
-      toast.info('Property saved locally (Supabase not connected)');
+      throw err; // Rethrow to let the UI know it failed to sync with the cloud
     }
   };
 

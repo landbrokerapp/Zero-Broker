@@ -169,7 +169,7 @@ export default function PostProperty() {
         coordinates: formData.coordinates || undefined,
       };
 
-      addProperty(propertyData);
+      await addProperty(propertyData);
       setIsSubmitted(true);
       toast.success('Property submitted successfully!');
     } catch (error) {

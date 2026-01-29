@@ -114,7 +114,7 @@ export default function AdminPostProperty() {
                 pgType: formData.intent === 'pg' ? 'coliving' : undefined
             };
 
-            addProperty(propertyData, true);
+            await addProperty(propertyData, true);
 
             toast.success('Property Published Successfully on Website!');
 
