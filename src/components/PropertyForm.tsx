@@ -98,7 +98,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
         resolver: zodResolver(formSchema),
         defaultValues: {
             purpose: 'Sale',
-            city: 'Chennai',
+            city: '',
             furnishingStatus: 'semi-furnished',
             amenities: [],
             termsAccepted: false,
@@ -111,6 +111,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
     const watchCity = watch('city');
 
     const availableLocalities = useMemo(() => {
+        if (!watchCity) return [];
         const localities = getLocalitiesForCity(watchCity);
         return localities.map(loc => loc.name);
     }, [watchCity]);
@@ -1105,7 +1106,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                 {/* Navigation Footer */}
                 <div className="flex justify-between items-center mt-12 pt-8 border-t border-border">
                     {step > 1 ? (
-                        <Button type="button" variant="outline" onClick={prevStep} className="h-12 px-8 rounded-xl flex items-center gap-2 font-bold transition-all hover:bg-muted active:scale-95"><ArrowLeft className="w-4 h-4" /> Back</Button>
+                        <Button type="button" variant="outline" onClick={prevStep} className="h-12 px-8 rounded-xl flex items-center gap-2 font-bold transition-all border-2 border-primary/20 text-primary hover:bg-primary/5 active:scale-95"><ArrowLeft className="w-4 h-4" /> Back</Button>
                     ) : <div />}
 
                     {step < 8 ? (
@@ -1116,7 +1117,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                         </Button>
                     )}
                 </div>
-            </form>
-        </div>
+            </form >
+        </div >
     );
 };
