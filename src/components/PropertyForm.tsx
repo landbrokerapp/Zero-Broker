@@ -131,6 +131,11 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
         }
     }, [watchPurpose, setValue]);
 
+    const handleNumericChange = (e: React.ChangeEvent<HTMLInputElement>, onChange: (value: string) => void) => {
+        const value = e.target.value.replace(/[^0-9]/g, '');
+        onChange(value);
+    };
+
     const steps = useMemo(() => {
         const allSteps = [
             { id: 'basic', title: 'Basic Info', icon: Home },
@@ -545,7 +550,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                                             name="pincode"
                                             control={control}
                                             render={({ field }) => (
-                                                <Input {...field} placeholder="641001" className="h-12 rounded-2xl" />
+                                                <Input {...field} type="text" inputMode="numeric" pattern="[0-9]*" maxLength={6} onChange={(e) => handleNumericChange(e, field.onChange)} placeholder="641001" className="h-12 rounded-2xl" />
                                             )}
                                         />
                                     </div>
@@ -592,7 +597,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                                                 name="price"
                                                 control={control}
                                                 render={({ field }) => (
-                                                    <Input {...field} type="number" placeholder="0.00" className="h-14 pl-12 text-xl font-bold rounded-2xl" />
+                                                    <Input {...field} type="text" inputMode="numeric" pattern="[0-9]*" onChange={(e) => handleNumericChange(e, field.onChange)} placeholder="0.00" className="h-14 pl-12 text-xl font-bold rounded-2xl" />
                                                 )}
                                             />
                                         </div>
@@ -624,7 +629,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                                                     name="securityDeposit"
                                                     control={control}
                                                     render={({ field }) => (
-                                                        <Input {...field} type="number" placeholder="Deposit Amount" className="h-12 pl-10 rounded-2xl" />
+                                                        <Input {...field} type="text" inputMode="numeric" pattern="[0-9]*" onChange={(e) => handleNumericChange(e, field.onChange)} placeholder="Deposit Amount" className="h-12 pl-10 rounded-2xl" />
                                                     )}
                                                 />
                                             </div>
@@ -704,7 +709,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                                                 <Controller
                                                     name="numBeds"
                                                     control={control}
-                                                    render={({ field }) => (<Input {...field} type="number" placeholder="Total beds" className="h-12 rounded-2xl" />)}
+                                                    render={({ field }) => (<Input {...field} type="text" inputMode="numeric" pattern="[0-9]*" onChange={(e) => handleNumericChange(e, field.onChange)} placeholder="Total beds" className="h-12 rounded-2xl" />)}
                                                 />
                                             </div>
                                         </div>
@@ -759,7 +764,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                                                         name="plotArea"
                                                         control={control}
                                                         render={({ field }) => (
-                                                            <Input {...field} type="number" placeholder="Area" className="h-12 flex-1 rounded-2xl" />
+                                                            <Input {...field} type="text" inputMode="numeric" pattern="[0-9]*" onChange={(e) => handleNumericChange(e, field.onChange)} placeholder="Area" className="h-12 flex-1 rounded-2xl" />
                                                         )}
                                                     />
                                                     <Controller
@@ -806,7 +811,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                                                 <Controller
                                                     name="roadWidth"
                                                     control={control}
-                                                    render={({ field }) => (<Input {...field} placeholder="e.g. 30" className="h-12 rounded-2xl" />)}
+                                                    render={({ field }) => (<Input {...field} type="text" inputMode="numeric" pattern="[0-9]*" onChange={(e) => handleNumericChange(e, field.onChange)} placeholder="e.g. 30" className="h-12 rounded-2xl" />)}
                                                 />
                                             </div>
                                             <div className="space-y-2">
@@ -851,7 +856,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                                                 <Controller
                                                     name="bathrooms"
                                                     control={control}
-                                                    render={({ field }) => (<Input {...field} type="number" className="h-12 rounded-2xl" />)}
+                                                    render={({ field }) => (<Input {...field} type="text" inputMode="numeric" pattern="[0-9]*" onChange={(e) => handleNumericChange(e, field.onChange)} className="h-12 rounded-2xl" />)}
                                                 />
                                             </div>
                                             {(watchType !== 'commercial' && watchType !== 'shop') && (
@@ -860,7 +865,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                                                     <Controller
                                                         name="balconies"
                                                         control={control}
-                                                        render={({ field }) => (<Input {...field} type="number" className="h-12 rounded-2xl" />)}
+                                                        render={({ field }) => (<Input {...field} type="text" inputMode="numeric" pattern="[0-9]*" onChange={(e) => handleNumericChange(e, field.onChange)} className="h-12 rounded-2xl" />)}
                                                     />
                                                 </div>
                                             )}
@@ -871,7 +876,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                                                 <Controller
                                                     name="builtUpArea"
                                                     control={control}
-                                                    render={({ field }) => (<Input {...field} type="number" placeholder="1200" className="h-12 rounded-2xl" />)}
+                                                    render={({ field }) => (<Input {...field} type="text" inputMode="numeric" pattern="[0-9]*" onChange={(e) => handleNumericChange(e, field.onChange)} placeholder="1200" className="h-12 rounded-2xl" />)}
                                                 />
                                                 {errors.builtUpArea && <p className="text-destructive text-sm font-medium">{errors.builtUpArea.message}</p>}
                                             </div>
@@ -900,7 +905,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                                                 <Controller
                                                     name="floor"
                                                     control={control}
-                                                    render={({ field }) => (<Input {...field} placeholder="e.g. 3" className="h-12 rounded-2xl" />)}
+                                                    render={({ field }) => (<Input {...field} type="text" inputMode="numeric" pattern="[0-9]*" onChange={(e) => handleNumericChange(e, field.onChange)} placeholder="e.g. 3" className="h-12 rounded-2xl" />)}
                                                 />
                                             </div>
                                             <div className="space-y-2">
@@ -908,7 +913,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                                                 <Controller
                                                     name="totalFloors"
                                                     control={control}
-                                                    render={({ field }) => (<Input {...field} type="number" placeholder="e.g. 5" className="h-12 rounded-2xl" />)}
+                                                    render={({ field }) => (<Input {...field} type="text" inputMode="numeric" pattern="[0-9]*" onChange={(e) => handleNumericChange(e, field.onChange)} placeholder="e.g. 5" className="h-12 rounded-2xl" />)}
                                                 />
                                             </div>
                                         </div>
