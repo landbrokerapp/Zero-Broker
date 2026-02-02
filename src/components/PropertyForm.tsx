@@ -131,16 +131,25 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
         }
     }, [watchPurpose, setValue]);
 
-    const steps = [
-        { title: 'Basic Info', icon: Home },
-        { title: 'Location', icon: MapPin },
-        { title: 'Pricing', icon: IndianRupee },
-        { title: 'Specs', icon: Maximize },
-        { title: 'Status', icon: Clock },
-        { title: 'Amenities', icon: Star },
-        { title: 'Media', icon: ImageIcon },
-        { title: 'Review', icon: CheckCircle },
-    ];
+    const steps = useMemo(() => {
+        const allSteps = [
+            { id: 'basic', title: 'Basic Info', icon: Home },
+            { id: 'location', title: 'Location', icon: MapPin },
+            { id: 'pricing', title: 'Pricing', icon: IndianRupee },
+            { id: 'specs', title: 'Specs', icon: Maximize },
+            { id: 'status', title: 'Status', icon: Clock },
+            { id: 'amenities', title: 'Amenities', icon: Star },
+            { id: 'media', title: 'Media', icon: ImageIcon },
+            { id: 'review', title: 'Review', icon: CheckCircle },
+        ];
+
+        return allSteps.filter(s => {
+            if (s.id === 'status' && (watchPurpose === 'PG' || watchType === 'plot')) return false;
+            return true;
+        });
+    }, [watchPurpose, watchType]);
+
+    const activeStepId = steps[step - 1]?.id;
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement> | React.DragEvent) => {
         let files: File[] = [];
@@ -239,13 +248,13 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
 
     const nextStep = async () => {
         let fieldsToValidate: any[] = [];
-        if (step === 1) {
+        if (activeStepId === 'basic') {
             // For PG, only validate title and purpose. For others, also validate type
             fieldsToValidate = watchPurpose === 'PG' ? ['title', 'purpose'] : ['title', 'type', 'purpose'];
         }
-        else if (step === 2) fieldsToValidate = ['city', 'area'];
-        else if (step === 3) fieldsToValidate = ['price'];
-        else if (step === 4) {
+        else if (activeStepId === 'location') fieldsToValidate = ['city', 'area'];
+        else if (activeStepId === 'pricing') fieldsToValidate = ['price'];
+        else if (activeStepId === 'specs') {
             // For PG, no specific field validation needed
             if (watchPurpose === 'PG') {
                 fieldsToValidate = [];
@@ -359,7 +368,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                         className="space-y-6"
                     >
                         {/* Step 1: Basic Information */}
-                        {step === 1 && (
+                        {activeStepId === 'basic' && (
                             <div className="space-y-6">
                                 {/* Purpose - First Step (Required) */}
                                 <div className="space-y-2">
@@ -440,7 +449,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                         )}
 
                         {/* Step 2: Location Details */}
-                        {step === 2 && (
+                        {activeStepId === 'location' && (
                             <div className="space-y-6">
                                 {/* Use My Location Button */}
                                 <div className="flex justify-end">
@@ -570,7 +579,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                         )}
 
                         {/* Step 3: Pricing & Deposit */}
-                        {step === 3 && (
+                        {activeStepId === 'pricing' && (
                             <div className="space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
@@ -642,7 +651,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                         )}
 
                         {/* Step 4: Specifications (Conditional) */}
-                        {step === 4 && (
+                        {activeStepId === 'specs' && (
                             <div className="space-y-6">
                                 {/* PG-SPECIFIC DETAILS (EXCLUSIVE BLOCK) - Show ONLY IF Purpose = PG */}
                                 {watchPurpose === 'PG' ? (
@@ -909,7 +918,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                         )}
 
                         {/* Step 5: Furnishing & Availability (Land and PG hidden) */}
-                        {step === 5 && (
+                        {activeStepId === 'status' && (
                             <div className="space-y-6">
                                 {(watchType === 'plot' || watchPurpose === 'PG') ? (
                                     <div className="text-center py-10 bg-muted/20 rounded-3xl border border-dashed border-border">
@@ -973,7 +982,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                         )}
 
                         {/* Step 6: Smart Amenities */}
-                        {step === 6 && (
+                        {activeStepId === 'amenities' && (
                             <div className="space-y-6">
                                 {currentAmenities.length === 0 ? (
                                     <div className="text-center py-10">
@@ -1017,7 +1026,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                         )}
 
                         {/* Step 7: Images & Media */}
-                        {step === 7 && (
+                        {activeStepId === 'media' && (
                             <div className="space-y-8">
                                 <div className="space-y-4">
                                     <div className="flex items-center justify-between"><Label className="text-lg font-bold">Property Photos * (Min 3)</Label><Badge variant="secondary" className="rounded-full">{imagePreviews.length} / 10</Badge></div>
@@ -1060,7 +1069,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                         )}
 
                         {/* Step 8: Review & Submit */}
-                        {step === 8 && (
+                        {activeStepId === 'review' && (
                             <div className="space-y-8">
                                 <div className="space-y-4">
                                     <h3 className="text-xl font-bold flex items-center gap-2"><Info className="w-6 h-6 text-primary" /> Final Review</h3>
@@ -1109,7 +1118,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                         <Button type="button" variant="outline" onClick={prevStep} className="h-12 px-8 rounded-xl flex items-center gap-2 font-bold transition-all border-2 border-primary/20 text-primary hover:bg-primary/5 active:scale-95"><ArrowLeft className="w-4 h-4" /> Back</Button>
                     ) : <div />}
 
-                    {step < 8 ? (
+                    {step < steps.length ? (
                         <Button type="button" onClick={nextStep} className="h-14 px-10 rounded-2xl flex items-center gap-2 font-bold bg-primary hover:bg-primary/90 text-white shadow-lg transition-all hover:translate-x-1 active:scale-95">Continue <ArrowRight className="w-5 h-5" /></Button>
                     ) : (
                         <Button type="submit" disabled={isSubmitting} className={cn("h-14 px-12 rounded-2xl flex items-center gap-3 font-bold text-lg shadow-xl transition-all", isAdmin ? "bg-amber-600 hover:bg-amber-700" : "bg-green-600 hover:bg-green-700", "text-white active:scale-95 shadow-lg shadow-green-500/20")}>
