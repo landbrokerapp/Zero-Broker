@@ -41,12 +41,12 @@ export default function AdminDashboard() {
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             <div className="flex flex-col gap-1">
-                <h1 className="text-3xl font-bold tracking-tight">System Overview</h1>
-                <p className="text-muted-foreground text-lg">Real-time metrics for ZeroBroker community.</p>
+                <h1 className="text-2xl md:text-3xl font-bold tracking-tight">System Overview</h1>
+                <p className="text-muted-foreground text-base md:text-lg">Real-time metrics for ZeroBroker community.</p>
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                 {stats.map((stat) => (
                     <Card key={stat.title} className="border-border shadow-sm hover:shadow-md transition-shadow rounded-2xl">
                         <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">

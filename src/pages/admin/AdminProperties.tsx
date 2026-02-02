@@ -84,88 +84,90 @@ export default function AdminProperties() {
             </div>
 
             <div className="bg-white dark:bg-neutral-900 border border-border rounded-2xl overflow-hidden shadow-sm">
-                <Table>
-                    <TableHeader className="bg-muted/50">
-                        <TableRow>
-                            <TableHead className="w-[100px]">ID</TableHead>
-                            <TableHead>Property Detail</TableHead>
-                            <TableHead>Type/Intent</TableHead>
-                            <TableHead>Location</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {filteredProperties.length > 0 ? (
-                            filteredProperties.map((p) => (
-                                <TableRow key={p.id} className="group hover:bg-muted/30">
-                                    <TableCell className="font-mono text-xs text-muted-foreground">
-                                        #{p.id.slice(0, 8)}
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                                                <img src={p.images[0]} className="w-full h-full object-cover" alt="" />
+                <div className="overflow-x-auto">
+                    <Table>
+                        <TableHeader className="bg-muted/50">
+                            <TableRow>
+                                <TableHead className="w-[100px]">ID</TableHead>
+                                <TableHead className="min-w-[200px]">Property Detail</TableHead>
+                                <TableHead>Type/Intent</TableHead>
+                                <TableHead className="min-w-[150px]">Location</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {filteredProperties.length > 0 ? (
+                                filteredProperties.map((p) => (
+                                    <TableRow key={p.id} className="group hover:bg-muted/30">
+                                        <TableCell className="font-mono text-xs text-muted-foreground">
+                                            #{p.id.slice(0, 8)}
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                                                    <img src={p.images[0]} className="w-full h-full object-cover" alt="" />
+                                                </div>
+                                                <div className="max-w-[200px]">
+                                                    <p className="font-medium text-sm line-clamp-1">{p.title}</p>
+                                                    <p className="text-xs text-muted-foreground">₹{p.price.toLocaleString()}</p>
+                                                </div>
                                             </div>
-                                            <div className="max-w-[200px]">
-                                                <p className="font-medium text-sm line-clamp-1">{p.title}</p>
-                                                <p className="text-xs text-muted-foreground">₹{p.price.toLocaleString()}</p>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="capitalize text-sm">
+                                                {p.type}
+                                                <span className="mx-1 text-muted-foreground">/</span>
+                                                <span className="text-muted-foreground">{p.intent}</span>
                                             </div>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="capitalize text-sm">
-                                            {p.type}
-                                            <span className="mx-1 text-muted-foreground">/</span>
-                                            <span className="text-muted-foreground">{p.intent}</span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="text-sm text-muted-foreground">
-                                        {p.locality}
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge variant={p.verified ? 'default' : 'secondary'} className="rounded-full">
-                                            {p.verified ? 'Verified' : 'Pending'}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <MoreVertical className="w-4 h-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl">
-                                                {!p.verified && (
-                                                    <DropdownMenuItem onClick={() => handleVerify(p.id)} className="text-green-500 cursor-pointer">
-                                                        <CheckCircle2 className="w-4 h-4 mr-2" />
-                                                        Verify Listing
+                                        </TableCell>
+                                        <TableCell className="text-sm text-muted-foreground">
+                                            {p.locality}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge variant={p.verified ? 'default' : 'secondary'} className="rounded-full">
+                                                {p.verified ? 'Verified' : 'Pending'}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <MoreVertical className="w-4 h-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl">
+                                                    {!p.verified && (
+                                                        <DropdownMenuItem onClick={() => handleVerify(p.id)} className="text-green-500 cursor-pointer">
+                                                            <CheckCircle2 className="w-4 h-4 mr-2" />
+                                                            Verify Listing
+                                                        </DropdownMenuItem>
+                                                    )}
+                                                    <DropdownMenuItem asChild>
+                                                        <a href={`/property/${p.id}`} target="_blank" rel="noreferrer" className="cursor-pointer">
+                                                            <ExternalLink className="w-4 h-4 mr-2" />
+                                                            View Preview
+                                                        </a>
                                                     </DropdownMenuItem>
-                                                )}
-                                                <DropdownMenuItem asChild>
-                                                    <a href={`/property/${p.id}`} target="_blank" rel="noreferrer" className="cursor-pointer">
-                                                        <ExternalLink className="w-4 h-4 mr-2" />
-                                                        View Preview
-                                                    </a>
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => handleDelete(p.id)} className="text-destructive cursor-pointer">
-                                                    <Trash2 className="w-4 h-4 mr-2" />
-                                                    Delete Entry
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
+                                                    <DropdownMenuItem onClick={() => handleDelete(p.id)} className="text-destructive cursor-pointer">
+                                                        <Trash2 className="w-4 h-4 mr-2" />
+                                                        Delete Entry
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                                        No listings match your search criteria.
                                     </TableCell>
                                 </TableRow>
-                            ))
-                        ) : (
-                            <TableRow>
-                                <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
-                                    No listings match your search criteria.
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
             </div>
         </div>
     );

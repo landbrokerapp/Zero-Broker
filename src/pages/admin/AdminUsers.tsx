@@ -55,87 +55,89 @@ export default function AdminUsers() {
             </div>
 
             <div className="bg-white dark:bg-neutral-900 border border-border rounded-2xl overflow-hidden shadow-sm">
-                <Table>
-                    <TableHeader className="bg-muted/50">
-                        <TableRow>
-                            <TableHead>User Profile</TableHead>
-                            <TableHead>Contact Info</TableHead>
-                            <TableHead>Role</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Joined</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {filteredUsers.map((user) => (
-                            <TableRow key={user.id} className="hover:bg-muted/30">
-                                <TableCell>
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary">
-                                            {user.name.charAt(0)}
-                                        </div>
-                                        <div>
-                                            <p className="font-medium text-sm">{user.name}</p>
-                                            <p className="text-xs text-muted-foreground underline">#{user.id}</p>
-                                        </div>
-                                    </div>
-                                </TableCell>
-                                <TableCell>
-                                    <div className="space-y-1">
-                                        <div className="flex items-center text-xs text-muted-foreground">
-                                            <Mail className="w-3 h-3 mr-1" /> {user.email}
-                                        </div>
-                                        <div className="flex items-center text-xs text-muted-foreground">
-                                            <Phone className="w-3 h-3 mr-1" /> {user.phone}
-                                        </div>
-                                    </div>
-                                </TableCell>
-                                <TableCell>
-                                    <Badge variant="outline" className="capitalize text-xs rounded-full">
-                                        {user.role}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell>
-                                    <Badge
-                                        variant={user.status === 'active' ? 'default' : 'destructive'}
-                                        className="capitalize text-xs rounded-full px-3"
-                                    >
-                                        {user.status}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell className="text-sm text-muted-foreground">
-                                    {user.joined}
-                                </TableCell>
-                                <TableCell className="text-right">
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="rounded-xl">
-                                                <MoreHorizontal className="w-4 h-4" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" className="w-48 rounded-xl">
-                                            <DropdownMenuItem className="cursor-pointer">
-                                                <UserCheck className="w-4 h-4 mr-2" /> View Activity
-                                            </DropdownMenuItem>
-                                            {user.status === 'active' ? (
-                                                <DropdownMenuItem className="text-yellow-500 cursor-pointer">
-                                                    <ShieldOff className="w-4 h-4 mr-2" /> Suspend
-                                                </DropdownMenuItem>
-                                            ) : (
-                                                <DropdownMenuItem className="text-green-500 cursor-pointer">
-                                                    <UserCheck className="w-4 h-4 mr-2" /> Reactivate
-                                                </DropdownMenuItem>
-                                            )}
-                                            <DropdownMenuItem className="text-destructive cursor-pointer">
-                                                <Trash2 className="w-4 h-4 mr-2" /> Delete User
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </TableCell>
+                <div className="overflow-x-auto">
+                    <Table>
+                        <TableHeader className="bg-muted/50">
+                            <TableRow>
+                                <TableHead className="min-w-[200px]">User Profile</TableHead>
+                                <TableHead className="min-w-[200px]">Contact Info</TableHead>
+                                <TableHead>Role</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="min-w-[120px]">Joined</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
+                        </TableHeader>
+                        <TableBody>
+                            {filteredUsers.map((user) => (
+                                <TableRow key={user.id} className="hover:bg-muted/30">
+                                    <TableCell>
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary">
+                                                {user.name.charAt(0)}
+                                            </div>
+                                            <div>
+                                                <p className="font-medium text-sm">{user.name}</p>
+                                                <p className="text-xs text-muted-foreground underline">#{user.id}</p>
+                                            </div>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="space-y-1">
+                                            <div className="flex items-center text-xs text-muted-foreground">
+                                                <Mail className="w-3 h-3 mr-1" /> {user.email}
+                                            </div>
+                                            <div className="flex items-center text-xs text-muted-foreground">
+                                                <Phone className="w-3 h-3 mr-1" /> {user.phone}
+                                            </div>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge variant="outline" className="capitalize text-xs rounded-full">
+                                            {user.role}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge
+                                            variant={user.status === 'active' ? 'default' : 'destructive'}
+                                            className="capitalize text-xs rounded-full px-3"
+                                        >
+                                            {user.status}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell className="text-sm text-muted-foreground">
+                                        {user.joined}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="rounded-xl">
+                                                    <MoreHorizontal className="w-4 h-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end" className="w-48 rounded-xl">
+                                                <DropdownMenuItem className="cursor-pointer">
+                                                    <UserCheck className="w-4 h-4 mr-2" /> View Activity
+                                                </DropdownMenuItem>
+                                                {user.status === 'active' ? (
+                                                    <DropdownMenuItem className="text-yellow-500 cursor-pointer">
+                                                        <ShieldOff className="w-4 h-4 mr-2" /> Suspend
+                                                    </DropdownMenuItem>
+                                                ) : (
+                                                    <DropdownMenuItem className="text-green-500 cursor-pointer">
+                                                        <UserCheck className="w-4 h-4 mr-2" /> Reactivate
+                                                    </DropdownMenuItem>
+                                                )}
+                                                <DropdownMenuItem className="text-destructive cursor-pointer">
+                                                    <Trash2 className="w-4 h-4 mr-2" /> Delete User
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
             </div>
         </div>
     );
