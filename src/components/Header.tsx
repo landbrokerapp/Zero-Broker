@@ -55,16 +55,6 @@ export function Header() {
                                 {link.label}
                             </Link>
                         ))}
-                        <Link
-                            to="/favorites"
-                            className={`transition-colors p-1 ${isActive('/favorites')
-                                ? 'text-primary'
-                                : 'text-muted-foreground hover:text-foreground'
-                                }`}
-                            title={t('favorites')}
-                        >
-                            <Heart className="w-5 h-5" />
-                        </Link>
                     </nav>
 
                     {/* Right Actions */}
