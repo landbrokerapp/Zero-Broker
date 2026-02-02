@@ -77,6 +77,18 @@ export function Header() {
 
                         <div className="w-px h-6 bg-border mx-2 hidden lg:block" />
 
+                        {/* Favorites Icon */}
+                        <Link
+                            to="/favorites"
+                            className={`hidden md:flex items-center justify-center w-10 h-10 rounded-full transition-colors ${isActive('/favorites')
+                                ? 'text-primary bg-primary/10'
+                                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                                }`}
+                            title={t('favorites')}
+                        >
+                            <Heart className="w-5 h-5" />
+                        </Link>
+
                         {/* Language Switcher */}
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>

@@ -93,7 +93,6 @@ export const propertyTypes = [
   { value: 'house', label: 'Independent House' },
   { value: 'villa', label: 'Villa' },
   { value: 'plot', label: 'Plot / Land' },
-  { value: 'pg', label: 'PG / Hostel' },
   { value: 'commercial', label: 'Commercial Office' },
   { value: 'shop', label: 'Shop / Showroom' },
 ];
