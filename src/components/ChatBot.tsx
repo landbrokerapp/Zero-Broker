@@ -60,11 +60,11 @@ export function ChatBot() {
 
         case 2: // Locality
           setChatState((prev) => ({ ...prev, step: 3, locality: option }));
-          const budgetOptions = chatState.intent === 'buy' 
+          const budgetOptions = chatState.intent === 'buy'
             ? budgetRanges.buy.map((b) => b.label)
             : chatState.intent === 'pg'
-            ? budgetRanges.pg.map((b) => b.label)
-            : budgetRanges.rent.map((b) => b.label);
+              ? budgetRanges.pg.map((b) => b.label)
+              : budgetRanges.rent.map((b) => b.label);
           addMessage(`${option} is a wonderful locality! What's your budget?`, 'bot', budgetOptions);
           break;
 
@@ -81,7 +81,7 @@ export function ChatBot() {
         case 5: // Furnishing
           setChatState((prev) => ({ ...prev, step: 6, furnishing: option }));
           addMessage("🎉 Great! I've found some matching properties for you. Let me show you the results!", 'bot');
-          
+
           // Navigate to results after a short delay
           setTimeout(() => {
             const params = new URLSearchParams();
@@ -101,10 +101,10 @@ export function ChatBot() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputValue.trim()) return;
-    
+
     addMessage(inputValue, 'user');
     setInputValue('');
-    
+
     // Simple response for custom input
     setTimeout(() => {
       addMessage("I understand! Let me help you find properties based on that. Please select from the options above for more accurate results.", 'bot');
@@ -158,14 +158,13 @@ export function ChatBot() {
                   className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[85%] rounded-2xl px-4 py-3 ${
-                      message.type === 'user'
-                        ? 'bg-primary text-primary-foreground rounded-br-md'
-                        : 'bg-muted text-foreground rounded-bl-md'
-                    }`}
+                    className={`max-w-[85%] rounded-2xl px-4 py-3 ${message.type === 'user'
+                      ? 'bg-primary text-primary-foreground rounded-br-md'
+                      : 'bg-muted text-foreground rounded-bl-md'
+                      }`}
                   >
                     <p className="text-sm">{message.content}</p>
-                    
+
                     {/* Options */}
                     {message.options && message.type === 'bot' && (
                       <div className="mt-3 flex flex-wrap gap-2">
