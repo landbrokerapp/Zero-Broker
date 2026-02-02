@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   ChevronLeft, ChevronRight, MapPin, Bed, Maximize, Car, Compass,
   Building, Layers, Home, BadgeCheck, Phone, MessageCircle, Share2,
-  Heart, Calendar, User, Shield, X
+  Heart, Calendar, User, Shield, X, Bath, IndianRupee
 } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
@@ -79,13 +79,17 @@ export default function PropertyDetail() {
 
   const overviewItems = [
     { icon: Maximize, label: 'Built-up Area', value: `${property.builtUpArea} sqft` },
-    { icon: Layers, label: 'Carpet Area', value: `${property.carpetArea} sqft` },
+    { icon: Bed, label: 'Bedroom', value: property.bhk || 'N/A' },
+    { icon: Bath, label: 'Bathrooms', value: property.bathrooms?.toString() || 'N/A' },
+    { icon: Building, label: 'Balconies', value: property.balconies?.toString() || '0' },
     { icon: Home, label: 'Furnishing', value: property.furnishing.replace('-', ' ') },
-    { icon: Building, label: 'Floor', value: `${property.floor} of ${property.totalFloors}` },
-    { icon: Compass, label: 'Facing', value: property.facing },
+    { icon: Layers, label: 'Floor', value: `${property.floor} of ${property.totalFloors}` },
+    { icon: Compass, label: 'Facing', value: property.facing || 'N/A' },
     { icon: Car, label: 'Parking', value: property.parking },
-    { icon: Shield, label: 'Ownership', value: property.ownershipType },
-    ...(property.maintenanceCharges ? [{ icon: Calendar, label: 'Maintenance', value: `₹${property.maintenanceCharges}/month` }] : []),
+    { icon: Shield, label: 'Age', value: property.propertyAge || 'N/A' },
+    { icon: Calendar, label: 'Available From', value: property.availableFrom || 'Immediate' },
+    ...(property.maintenanceCharges ? [{ icon: IndianRupee, label: 'Maintenance', value: `₹${property.maintenanceCharges}/mo` }] : []),
+    ...(property.securityDeposit ? [{ icon: Shield, label: 'Deposit', value: `₹${property.securityDeposit}` }] : []),
   ];
 
   return (

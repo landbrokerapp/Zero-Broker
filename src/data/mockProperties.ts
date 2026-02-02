@@ -5,25 +5,52 @@ export interface Property {
     lng: number;
   };
   title: string;
-  type: 'apartment' | 'house' | 'villa' | 'plot' | 'pg' | 'commercial';
+  type: 'apartment' | 'house' | 'villa' | 'plot' | 'pg' | 'commercial' | 'shop';
   intent: 'buy' | 'rent' | 'pg';
+  purpose?: 'Sale' | 'Rent' | 'PG';
   price: number;
   priceUnit: 'month' | 'total' | 'sqft';
+  priceNegotiable?: boolean;
+  maintenanceCharges?: number;
+  securityDeposit?: number;
+  foodIncluded?: boolean;
   locality: string;
   city: string;
+  address?: string;
+  landmark?: string;
+  pincode?: string;
   bhk?: string;
-  pgType?: 'boys' | 'girls' | 'coliving';
-  furnishing: 'fully-furnished' | 'semi-furnished' | 'unfurnished';
+  bathrooms?: number;
+  balconies?: number;
+  parking: string;
   builtUpArea: number;
-  carpetArea: number;
+  carpetArea?: number;
   floor: string;
   totalFloors: number;
-  facing: string;
-  parking: string;
-  maintenanceCharges?: number;
-  ownershipType: 'freehold' | 'leasehold' | 'cooperative';
+  furnishing: 'fully-furnished' | 'semi-furnished' | 'unfurnished';
+  availableFrom?: string;
+  propertyAge?: 'new' | '1-3' | '3-5' | '5+';
+  facing?: string;
+  ownershipType?: 'freehold' | 'leasehold' | 'cooperative';
   amenities: string[];
+  // Land specific
+  plotArea?: number;
+  plotAreaUnit?: 'sqft' | 'cents';
+  boundaryWall?: boolean;
+  roadWidth?: string;
+  // PG specific
+  pgDetails?: {
+    pgType: 'boys' | 'girls' | 'coliving';
+    roomType: 'single' | 'double' | 'shared';
+    foodType: 'veg' | 'non-veg' | 'both';
+    electricityChargesIncluded: boolean;
+    houseRules?: string;
+    numBeds?: number;
+  };
+  // Commercial specific
+  washroomCount?: number;
   images: string[];
+  videoUrl?: string;
   verified: boolean;
   postedDate: string;
   description: string;
@@ -42,21 +69,33 @@ export interface Seller {
   avatar?: string;
 }
 
-export const localities = [
-  'Saravanampatti',
-  'Peelamedu',
-  'RS Puram',
-  'Gandhipuram',
-  'Vadavalli',
-];
+export const tamilNaduCities: Record<string, string[]> = {
+  'Chennai': ['Adyar', 'Velachery', 'T Nagar', 'Anna Nagar', 'Ambattur', 'Porur', 'Madipakkam', 'Guindy', 'Mylapore', 'Perambur', 'Pallavaram', 'Tambaram', 'Royapettah', 'Thiruvanmiyur', 'Besant Nagar'],
+  'Coimbatore': ['Saravanampatti', 'Peelamedu', 'RS Puram', 'Gandhipuram', 'Vadavalli', 'Singanallur', 'Thudiyalur', 'Kovaipudur', 'Ganapathy', 'Ramanathapuram', 'Saibaba Colony'],
+  'Madurai': ['Anna Nagar', 'K Pudur', 'Sellur', 'Simmakkal', 'SS Colony', 'Tiruppalai', 'Tirunagar', 'Kalavasal', 'Arapalayam'],
+  'Trichy': ['Thillai Nagar', 'Srirangam', 'Cantonment', 'KK Nagar', 'Woraiyur', 'Lalgudi', 'Tiruvarambur'],
+  'Salem': ['Alagapuram', 'Fairlands', 'Suramangalam', 'Hasthampatti', 'Ammmapet', 'Kondalampatti'],
+  'Tiruppur': ['Avinashi Road', 'Palladam Road', 'Dharapuram Road', 'Kangayam Road'],
+  'Erode': ['Perundurai Road', 'Sathy Road', 'Bhavani', 'Gobichettipalayam'],
+  'Vellore': ['Katpadi', 'Sathuvachari', 'Gandhi Nagar', 'Arcot'],
+  'Tirunelveli': ['Palayamkottai', 'Pettai', 'Melapalayam', 'Tenkasi'],
+  'Thoothukudi': ['Spic Nagar', 'Millerpuram', 'Meelavittan'],
+  'Hosur': ['SIPCOT Phase I', 'SIPCOT Phase II', 'Mathigiri', 'Zuzuvadi'],
+  'Kancheepuram': ['Sriperumbudur', 'Walajabad', 'Oragadam'],
+  'Thanjavur': ['Medical College Road', 'McDaniel Nagar', 'Kumbakonam Road'],
+  'Nagercoil': ['Kottar', 'Vadasery', 'Ozhuginasery'],
+};
+
+export const localities = Object.values(tamilNaduCities).flat();
 
 export const propertyTypes = [
-  { value: 'apartment', label: 'Apartment' },
+  { value: 'apartment', label: 'Apartment / Flat' },
   { value: 'house', label: 'Independent House' },
   { value: 'villa', label: 'Villa' },
-  { value: 'plot', label: 'Plot/Land' },
-  { value: 'commercial', label: 'Commercial' },
-  { value: 'others', label: 'Others' },
+  { value: 'plot', label: 'Plot / Land' },
+  { value: 'pg', label: 'PG / Hostel' },
+  { value: 'commercial', label: 'Commercial Office' },
+  { value: 'shop', label: 'Shop / Showroom' },
 ];
 
 export const budgetRanges = {
@@ -80,11 +119,9 @@ export const budgetRanges = {
 };
 
 export const amenitiesList = {
-  sports: ['Swimming Pool', 'Gym', 'Tennis Court', 'Badminton Court', 'Jogging Track'],
-  convenience: ['Power Backup', 'Lift', 'Intercom', 'Gas Pipeline', 'Water Storage'],
-  safety: ['CCTV', '24/7 Security', 'Gated Community', 'Fire Safety', 'Video Door Phone'],
-  leisure: ['Club House', 'Garden', 'Party Hall', 'Kids Play Area', 'Library'],
-  environment: ['Rain Water Harvesting', 'Solar Panels', 'Waste Management', 'EV Charging'],
+  residential: ['Lift', 'Power Backup', 'Security', 'Parking', 'Water Supply', 'Gym', 'Swimming Pool', 'Club House'],
+  pg: ['Wi-Fi', 'Food', 'Laundry', 'CCTV', 'Power Backup', 'Security', 'Parking'],
+  commercial: ['Lift', 'Power Backup', 'Parking', 'Security', 'CCTV', 'Fire Safety'],
 };
 
 export const mockProperties: Property[] = [];
