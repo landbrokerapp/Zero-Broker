@@ -5,6 +5,7 @@ import { Menu, X, MapPin, User, LogOut, Building2, Globe, Heart } from 'lucide-r
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useFavorites } from '@/contexts/FavoritesContext';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -17,6 +18,7 @@ export function Header() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const { user, isAuthenticated, logout } = useAuth();
     const { language, setLanguage, t } = useLanguage();
+    const { favorites } = useFavorites();
     const location = useLocation();
 
     const navLinks = [
@@ -70,13 +72,18 @@ export function Header() {
                         {/* Favorites Icon */}
                         <Link
                             to="/favorites"
-                            className={`hidden md:flex items-center justify-center w-10 h-10 rounded-full transition-colors ${isActive('/favorites')
+                            className={`hidden md:flex items-center justify-center w-10 h-10 rounded-full transition-colors relative ${isActive('/favorites')
                                 ? 'text-primary bg-primary/10'
                                 : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                                 }`}
                             title={t('favorites')}
                         >
                             <Heart className="w-5 h-5" />
+                            {favorites.length > 0 && (
+                                <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-white text-xs font-bold rounded-full flex items-center justify-center">
+                                    {favorites.length}
+                                </span>
+                            )}
                         </Link>
 
                         {/* Language Switcher */}
@@ -167,12 +174,19 @@ export function Header() {
                             <Link
                                 to="/favorites"
                                 onClick={() => setIsMenuOpen(false)}
-                                className={`px-4 py-3 h-12 flex items-center gap-3 rounded-xl text-sm font-medium transition-colors ${isActive('/favorites')
+                                className={`px-4 py-3 h-12 flex items-center gap-3 rounded-xl text-sm font-medium transition-colors relative ${isActive('/favorites')
                                     ? 'bg-primary text-primary-foreground'
                                     : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                                     } `}
                             >
-                                <Heart className="w-5 h-5" />
+                                <div className="relative">
+                                    <Heart className="w-5 h-5" />
+                                    {favorites.length > 0 && (
+                                        <span className="absolute -top-2 -right-2 w-5 h-5 bg-destructive text-white text-xs font-bold rounded-full flex items-center justify-center">
+                                            {favorites.length}
+                                        </span>
+                                    )}
+                                </div>
                                 {t('favorites')}
                             </Link>
                             <Link to="/post-property" onClick={() => setIsMenuOpen(false)}>

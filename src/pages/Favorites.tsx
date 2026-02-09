@@ -7,12 +7,13 @@ import { PropertyCard } from '@/components/PropertyCard';
 import { ChatBot } from '@/components/ChatBot';
 import { Button } from '@/components/ui/button';
 import { useFavorites } from '@/contexts/FavoritesContext';
-import { mockProperties } from '@/data/mockProperties';
+import { useProperties } from '@/contexts/PropertyContext';
 
 export default function Favorites() {
     const { favorites } = useFavorites();
+    const { properties } = useProperties();
 
-    const favoriteProperties = mockProperties.filter(property => favorites.includes(property.id));
+    const favoriteProperties = properties.filter(property => favorites.includes(property.id));
 
     return (
         <div className="min-h-screen bg-background">
