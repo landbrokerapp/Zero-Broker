@@ -245,16 +245,23 @@
   }
 }
 
-.animate-scroll-left {
-  animation: scroll-left 80s linear infinite;
+.animate-scroll-left-fast {
+  animation: scroll-left 16s linear infinite;
 }
 
-.animate-scroll-right {
-  animation: scroll-right 80s linear infinite;
+.animate-scroll-right-fast {
+  animation: scroll-right 16s linear infinite;
 }
 
-.pause-hover:hover .animate-scroll-left,
-.pause-hover:hover .animate-scroll-right {
+.animate-scroll-left-slow {
+  animation: scroll-left 20s linear infinite;
+}
+
+.animate-scroll-right-slow {
+  animation: scroll-right 20s linear infinite;
+}
+
+.pause-hover:hover [class*="animate-scroll-"] {
   animation-play-state: paused;
 }
 

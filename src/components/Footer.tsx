@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Building2, Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
+import { tamilNaduCities } from '@/data/mockProperties';
 
 export function Footer() {
   return (
@@ -67,31 +68,16 @@ export function Footer() {
           <div>
             <h4 className="font-display font-semibold text-lg mb-4">Popular Localities</h4>
             <ul className="space-y-2">
-              <li>
-                <Link to="/properties?locality=Saravanampatti" className="text-muted-foreground hover:text-secondary text-sm transition-colors">
-                  Saravanampatti
-                </Link>
-              </li>
-              <li>
-                <Link to="/properties?locality=Peelamedu" className="text-muted-foreground hover:text-secondary text-sm transition-colors">
-                  Peelamedu
-                </Link>
-              </li>
-              <li>
-                <Link to="/properties?locality=RS Puram" className="text-muted-foreground hover:text-secondary text-sm transition-colors">
-                  RS Puram
-                </Link>
-              </li>
-              <li>
-                <Link to="/properties?locality=Gandhipuram" className="text-muted-foreground hover:text-secondary text-sm transition-colors">
-                  Gandhipuram
-                </Link>
-              </li>
-              <li>
-                <Link to="/properties?locality=Vadavalli" className="text-muted-foreground hover:text-secondary text-sm transition-colors">
-                  Vadavalli
-                </Link>
-              </li>
+              {tamilNaduCities['Coimbatore'].slice(0, 5).map((locality) => (
+                <li key={locality}>
+                  <Link
+                    to={`/properties?locality=${encodeURIComponent(locality)}`}
+                    className="text-muted-foreground hover:text-secondary text-sm transition-colors"
+                  >
+                    {locality}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
