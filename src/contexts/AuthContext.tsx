@@ -28,9 +28,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // 1. Check active session from Supabase
+    // 1. Check active session from Supabase or localStorage
     const checkSession = async () => {
       try {
+        // Check for demo user or admin user in localStorage first
+        const demoUserStr = localStorage.getItem('demo_user');
+        const adminUserStr = localStorage.getItem('admin_user');
+
+        if (demoUserStr) {
+          const demoUser = JSON.parse(demoUserStr);
+          setUser(demoUser);
+          setIsLoading(false);
+          return;
+        }
+
+        if (adminUserStr) {
+          const adminUser = JSON.parse(adminUserStr);
+          setUser(adminUser);
+          setIsLoading(false);
+          return;
+        }
+
+        // Check Supabase session
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
           const userData: User = {
@@ -96,7 +115,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return true;
       }
 
-      // Real Supabase Login
+      // OTP-based login (phone number + OTP)
+      // Check if email looks like a phone number (10 digits)
+      if (/^\d{10}$/.test(email) && password === '123456') {
+        const demoUser: User = {
+          id: `user-${email}`,
+          name: 'Demo User',
+          username: email,
+          phone: email,
+          role: 'user'
+        };
+        setUser(demoUser);
+        localStorage.setItem('demo_user', JSON.stringify(demoUser));
+        return true;
+      }
+
+      // Real Supabase Login (email + password)
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -121,8 +155,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
-    // Clear local bypass
+    // Clear local bypass users
     localStorage.removeItem('admin_user');
+    localStorage.removeItem('demo_user');
 
     // Sign out from Supabase
     await supabase.auth.signOut();
