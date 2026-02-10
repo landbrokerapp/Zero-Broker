@@ -58,7 +58,6 @@ export default function PostProperty() {
         floor: formData.floor || 'G',
         totalFloors: formData.totalFloors ? parseInt(formData.totalFloors) : 0,
         furnishing: formData.furnishingStatus,
-        availableFrom: formData.availableFrom,
         propertyAge: formData.propertyAge as Property['propertyAge'],
         amenities: formData.amenities,
         images: formData.images,

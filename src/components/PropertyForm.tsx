@@ -70,7 +70,6 @@ const formSchema = z.object({
     carpetArea: z.string().optional(),
 
     furnishingStatus: z.enum(['unfurnished', 'semi-furnished', 'fully-furnished']).optional(),
-    availableFrom: z.string().optional(),
     propertyAge: z.string().optional(),
     amenities: z.array(z.string()).default([]),
     description: z.string().optional(),
@@ -954,14 +953,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                                             />
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
-                                            <div className="space-y-2">
-                                                <Label className="flex items-center gap-2"><Calendar className="w-4 h-4 text-primary" /> Available From</Label>
-                                                <Controller
-                                                    name="availableFrom"
-                                                    control={control}
-                                                    render={({ field }) => (<Input {...field} type="date" className="h-12 rounded-2xl" />)}
-                                                />
-                                            </div>
+
                                             <div className="space-y-2">
                                                 <Label className="flex items-center gap-2"><Clock className="w-4 h-4 text-primary" /> Property Age</Label>
                                                 <Controller
