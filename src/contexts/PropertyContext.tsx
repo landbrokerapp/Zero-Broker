@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 
 interface PropertyFilters {
   intent?: 'buy' | 'rent' | 'pg';
+  city?: string;
   locality?: string;
   type?: string;
   bhk?: string;
@@ -115,6 +116,7 @@ export function PropertyProvider({ children }: { children: ReactNode }) {
   const filteredProperties = properties.filter((property) => {
     if (!property.verified) return false;
     if (filters.intent && property.intent !== filters.intent) return false;
+    if (filters.city && property.city !== filters.city) return false;
     if (filters.locality && property.locality !== filters.locality) return false;
     if (filters.type && property.type !== filters.type) return false;
     if (filters.bhk && property.bhk !== filters.bhk) return false;

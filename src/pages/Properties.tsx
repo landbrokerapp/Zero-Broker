@@ -31,16 +31,18 @@ export default function Properties() {
   const { properties, filters, setFilters, filteredProperties } = useProperties();
 
   const intent = searchParams.get('intent') as 'buy' | 'rent' | 'pg' | null;
+  const city = searchParams.get('city');
   const locality = searchParams.get('locality');
   const type = searchParams.get('type');
 
   useEffect(() => {
     setFilters({
       intent: intent || undefined,
+      city: city || undefined,
       locality: locality || undefined,
       type: type || undefined,
     });
-  }, [intent, locality, type, setFilters]);
+  }, [intent, city, locality, type, setFilters]);
 
   const updateFilter = (key: string, value: string | null) => {
     const newParams = new URLSearchParams(searchParams);
@@ -76,6 +78,23 @@ export default function Properties() {
             </Button>
           ))}
         </div>
+      </div>
+
+      {/* City */}
+      <div>
+        <label className="text-sm font-medium text-foreground mb-2 block">City</label>
+        <Select value={city || ''} onValueChange={(v) => updateFilter('city', v || null)}>
+          <SelectTrigger className="bg-card">
+            <SelectValue placeholder="Select city" />
+          </SelectTrigger>
+          <SelectContent className="bg-card">
+            {['Coimbatore', 'Chennai', 'Madurai', 'Trichy', 'Salem'].map((c) => (
+              <SelectItem key={c} value={c}>
+                {c}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Locality */}
@@ -158,7 +177,8 @@ export default function Properties() {
           </div>
           <h1 className="font-display text-3xl font-bold text-foreground">
             {intent === 'buy' ? 'Properties for Sale' : intent === 'rent' ? 'Properties for Rent' : intent === 'pg' ? 'PG / Co-Living' : 'All Properties'}
-            {locality && ` in ${locality}`}
+            {city && ` in ${city}`}
+            {locality && ` - ${locality}`}
           </h1>
         </div>
 

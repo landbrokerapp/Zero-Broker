@@ -18,6 +18,7 @@ interface ChatState {
   mode: 'search' | 'post'; // Top level mode
   // Search State
   searchIntent?: 'buy' | 'rent' | 'pg';
+  searchCity?: string;
   searchLocality?: string;
 
   // Post Property State
@@ -50,8 +51,8 @@ export function ChatBot() {
   // Initialize Greeting
   useEffect(() => {
     const greeting = user
-      ? `Hello! ${user.name} 👋 I'm your property search assistant. Let me help you find your perfect property in Coimbatore. What are you looking for?`
-      : "Hello! 👋 I'm your property search assistant. Let me help you find your perfect property in Coimbatore. What are you looking for?";
+      ? `Hello! ${user.name} 👋 I'm your property search assistant. Let me help you find your perfect property. What are you looking for?`
+      : "Hello! 👋 I'm your property search assistant. Let me help you find your perfect property. What are you looking for?";
 
     setMessages([
       {
@@ -332,14 +333,20 @@ export function ChatBot() {
   const startSearchFlow = (input: string) => {
     const intent = input.toLowerCase().includes('pg') ? 'pg' : input.toLowerCase() as 'buy' | 'rent'; // Simple heuristic
     setChatState(prev => ({ ...prev, mode: 'search', step: 2, searchIntent: intent }));
-    addMessage('Great choice! Which area in Coimbatore are you interested in?', 'bot', localities.slice(0, 8));
+    addMessage('Great choice! Which city are you looking in?', 'bot', ['Coimbatore', 'Chennai', 'Madurai', 'Trichy', 'Salem']);
   };
 
   const handleSearchFlow = (input: string) => {
     const { step, searchIntent } = chatState;
 
-    if (step === 2) { // Locality selected
-      setChatState(prev => ({ ...prev, searchLocality: input, step: 3 }));
+    if (step === 2) { // City selected
+      setChatState(prev => ({ ...prev, searchCity: input, step: 3 }));
+      addMessage(`Great! Which area in ${input} are you interested in?`, 'bot', localities.slice(0, 8));
+      return;
+    }
+
+    if (step === 3) { // Locality selected
+      setChatState(prev => ({ ...prev, searchLocality: input, step: 4 }));
       const budgetOptions = searchIntent === 'buy'
         ? budgetRanges.buy.map((b) => b.label)
         : searchIntent === 'pg'
@@ -349,25 +356,26 @@ export function ChatBot() {
       return;
     }
 
-    if (step === 3) { // Budget selected
-      setChatState(prev => ({ ...prev, step: 4, budget: input }));
+    if (step === 4) { // Budget selected
+      setChatState(prev => ({ ...prev, step: 5, budget: input }));
       addMessage("Perfect! What type of property are you looking for?", 'bot', ['1 BHK', '2 BHK', '3 BHK', 'Any Type']);
       return;
     }
 
-    if (step === 4) { // Property type
-      setChatState(prev => ({ ...prev, step: 5, propertyType: input }));
+    if (step === 5) { // Property type
+      setChatState(prev => ({ ...prev, step: 6, propertyType: input }));
       addMessage("Last question - what's your furnishing preference?", 'bot', ['Fully Furnished', 'Semi Furnished', 'Unfurnished', 'Any']);
       return;
     }
 
-    if (step === 5) { // Furnishing -> Search
-      setChatState(prev => ({ ...prev, step: 6, furnishing: input }));
+    if (step === 6) { // Furnishing -> Search
+      setChatState(prev => ({ ...prev, step: 7, furnishing: input }));
       addMessage("🎉 Great! I've found some matching properties for you. Let me show you the results!", 'bot');
 
       setTimeout(() => {
         const params = new URLSearchParams();
         if (chatState.searchIntent) params.set('intent', chatState.searchIntent);
+        if (chatState.searchCity) params.set('city', chatState.searchCity);
         if (chatState.searchLocality) params.set('locality', chatState.searchLocality);
         navigate(`/properties?${params.toString()}`);
         setIsOpen(false);
@@ -421,8 +429,8 @@ export function ChatBot() {
                 >
                   <div
                     className={`max-w-[85%] rounded-2xl px-4 py-3 ${message.type === 'user'
-                        ? 'bg-primary text-primary-foreground rounded-br-md'
-                        : 'bg-muted text-foreground rounded-bl-md'
+                      ? 'bg-primary text-primary-foreground rounded-br-md'
+                      : 'bg-muted text-foreground rounded-bl-md'
                       }`}
                   >
                     <div className="text-sm">{message.content}</div>
