@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { mockProperties, mockSellers, propertyTypes, tamilNaduCities } from '@/data/mockProperties';
+import { mockProperties, mockSellers, propertyTypes } from '@/data/mockProperties';
 import { pgTypes } from '@/data/pgTypes';
 import { useProperties } from '@/contexts/PropertyContext';
 import { Property } from '@/data/mockProperties';
@@ -34,7 +34,7 @@ const propertyCategories = [
 
 export default function Index() {
   const { properties } = useProperties();
-  const popularLocalities = tamilNaduCities['Coimbatore'];
+
   const featuredProperties = properties.filter(p => p.verified).slice(0, 6);
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -197,57 +197,7 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Popular Localities */}
-      <section className="py-12 bg-muted/50 overflow-hidden">
-        <div className="container mx-auto px-4 mb-8 text-center">
-          <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{t('popularLocalities')}</span>
-        </div>
 
-        <div className="flex flex-col gap-6 w-full pause-hover relative">
-          {/* Gradient Overlays for Smooth Fade Effect */}
-          <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-muted/50 to-transparent z-10 pointer-events-none" />
-          <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-muted/50 to-transparent z-10 pointer-events-none" />
-
-          {/* Row 1: Left to Right */}
-          <div className="flex w-max animate-scroll-right-fast gap-4 px-4">
-            {Array(4).fill(popularLocalities.slice(0, Math.ceil(popularLocalities.length / 3))).flat().map((locality, index) => (
-              <Link
-                key={`r1-${locality}-${index}`}
-                to={`/properties?locality=${encodeURIComponent(locality)}`}
-                className="flex-shrink-0 px-6 py-2.5 bg-card/80 backdrop-blur-sm rounded-full text-sm font-medium text-foreground/80 border border-border/50 hover:border-primary hover:text-primary hover:bg-card transition-all shadow-sm whitespace-nowrap"
-              >
-                {locality}
-              </Link>
-            ))}
-          </div>
-
-          {/* Row 2: Right to Left */}
-          <div className="flex w-max animate-scroll-left-slow gap-4 px-4">
-            {Array(4).fill(popularLocalities.slice(Math.ceil(popularLocalities.length / 3), Math.ceil(2 * popularLocalities.length / 3))).flat().map((locality, index) => (
-              <Link
-                key={`r2-${locality}-${index}`}
-                to={`/properties?locality=${encodeURIComponent(locality)}`}
-                className="flex-shrink-0 px-6 py-2.5 bg-card/80 backdrop-blur-sm rounded-full text-sm font-medium text-foreground/80 border border-border/50 hover:border-primary hover:text-primary hover:bg-card transition-all shadow-sm whitespace-nowrap"
-              >
-                {locality}
-              </Link>
-            ))}
-          </div>
-
-          {/* Row 3: Left to Right */}
-          <div className="flex w-max animate-scroll-right-fast gap-4 px-4">
-            {Array(4).fill(popularLocalities.slice(Math.ceil(2 * popularLocalities.length / 3))).flat().map((locality, index) => (
-              <Link
-                key={`r3-${locality}-${index}`}
-                to={`/properties?locality=${encodeURIComponent(locality)}`}
-                className="flex-shrink-0 px-6 py-2.5 bg-card/80 backdrop-blur-sm rounded-full text-sm font-medium text-foreground/80 border border-border/50 hover:border-primary hover:text-primary hover:bg-card transition-all shadow-sm whitespace-nowrap"
-              >
-                {locality}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* How It Works Section */}
       <section className="py-16 lg:py-24 bg-background">

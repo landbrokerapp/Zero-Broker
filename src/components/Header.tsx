@@ -104,7 +104,7 @@ export function Header() {
                         </DropdownMenu>
 
                         <Link to="/post-property">
-                            <Button variant="outline" className="hidden md:flex border-accent text-accent hover:bg-accent hover:text-accent-foreground">
+                            <Button variant="outline" className="flex border-accent text-accent hover:bg-accent hover:text-accent-foreground h-9 px-3 text-xs md:h-10 md:px-4 md:text-sm">
                                 {t('postProperty')}
                             </Button>
                         </Link>
