@@ -58,6 +58,9 @@ const formSchema = z.object({
     plotFacing: z.string().optional(),
     boundaryWall: z.boolean().optional(),
     roadWidth: z.string().optional(),
+    roadLength: z.string().optional(),
+    propertyLength: z.string().optional(),
+    propertyWidth: z.string().optional(),
     // PG Specs
     pgType: z.string().optional(),
     pgRoomType: z.string().optional(),
@@ -72,7 +75,7 @@ const formSchema = z.object({
     furnishingStatus: z.enum(['unfurnished', 'semi-furnished', 'fully-furnished']).optional(),
     propertyAge: z.string().optional(),
     amenities: z.array(z.string()).default([]),
-    description: z.string().optional(),
+    description: z.string().min(20, 'Description must be at least 20 characters'),
     termsAccepted: z.boolean().refine(val => val === true, 'You must accept the terms'),
 });
 
@@ -143,6 +146,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
             { id: 'specs', title: 'Specs', icon: Maximize },
             { id: 'status', title: 'Status', icon: Clock },
             { id: 'amenities', title: 'Amenities', icon: Star },
+            { id: 'details', title: 'Description', icon: Info },
             { id: 'media', title: 'Media', icon: ImageIcon },
             { id: 'review', title: 'Review', icon: CheckCircle },
         ];
@@ -268,6 +272,9 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                 fieldsToValidate = ['builtUpArea'];
             }
         }
+        else if (activeStepId === 'details') {
+            fieldsToValidate = ['description'];
+        }
 
         const result = fieldsToValidate.length > 0 ? await trigger(fieldsToValidate as any) : true;
         if (result) setStep(prev => prev + 1);
@@ -278,7 +285,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
     const internalOnSubmit = async (data: FormValues) => {
         if (imagePreviews.length < 3) {
             toast.error('Please upload at least 3 images');
-            setStep(7);
+            setStep(8);
             return;
         }
 
@@ -804,15 +811,40 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                                                 />
                                             </div>
                                         </div>
+
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div className="space-y-2">
-                                                <Label>Road Width (ft)</Label>
-                                                <Controller
-                                                    name="roadWidth"
-                                                    control={control}
-                                                    render={({ field }) => (<Input {...field} type="text" inputMode="numeric" pattern="[0-9]*" onChange={(e) => handleNumericChange(e, field.onChange)} placeholder="e.g. 30" className="h-12 rounded-2xl" />)}
-                                                />
+                                                <Label>Property Dimensions (ft)</Label>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <Controller
+                                                        name="propertyLength"
+                                                        control={control}
+                                                        render={({ field }) => (<Input {...field} type="text" inputMode="numeric" pattern="[0-9]*" onChange={(e) => handleNumericChange(e, field.onChange)} placeholder="Length" className="h-12 rounded-2xl" />)}
+                                                    />
+                                                    <Controller
+                                                        name="propertyWidth"
+                                                        control={control}
+                                                        render={({ field }) => (<Input {...field} type="text" inputMode="numeric" pattern="[0-9]*" onChange={(e) => handleNumericChange(e, field.onChange)} placeholder="Width" className="h-12 rounded-2xl" />)}
+                                                    />
+                                                </div>
                                             </div>
+                                            <div className="space-y-2">
+                                                <Label>Road Dimensions (ft)</Label>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <Controller
+                                                        name="roadLength"
+                                                        control={control}
+                                                        render={({ field }) => (<Input {...field} type="text" inputMode="numeric" pattern="[0-9]*" onChange={(e) => handleNumericChange(e, field.onChange)} placeholder="Length" className="h-12 rounded-2xl" />)}
+                                                    />
+                                                    <Controller
+                                                        name="roadWidth"
+                                                        control={control}
+                                                        render={({ field }) => (<Input {...field} type="text" inputMode="numeric" pattern="[0-9]*" onChange={(e) => handleNumericChange(e, field.onChange)} placeholder="Width" className="h-12 rounded-2xl" />)}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div className="space-y-2">
                                                 <Label>Boundary Wall</Label>
                                                 <Controller
@@ -1020,6 +1052,37 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                                     </div>
                                 )}
                             </div>
+
+                        )}
+
+                        {/* Step 6.5: Description (New Step before Media) */}
+                        {activeStepId === 'details' && (
+                            <div className="space-y-6">
+                                <div className="space-y-2">
+                                    <Label className="text-lg font-bold">Property Description *</Label>
+                                    <p className="text-sm text-muted-foreground">Describe your property in detail. do not include contact numbers.</p>
+                                    <Controller
+                                        name="description"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <Textarea
+                                                {...field}
+                                                onChange={(e) => {
+                                                    // Remove numeric characters
+                                                    const value = e.target.value.replace(/[0-9]/g, '');
+                                                    if (value !== e.target.value) {
+                                                        toast.warning("Numbers are not allowed in description");
+                                                    }
+                                                    field.onChange(value);
+                                                }}
+                                                placeholder="Tell us more about the property... (No numbers allowed)"
+                                                className="min-h-[200px] rounded-2xl p-4 text-base"
+                                            />
+                                        )}
+                                    />
+                                    {errors.description && <p className="text-destructive text-sm font-medium">{errors.description.message}</p>}
+                                </div>
+                            </div>
                         )}
 
                         {/* Step 7: Images & Media */}
@@ -1078,16 +1141,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                                             <div><p className="text-muted-foreground">Type</p><p className="font-bold capitalize">{watch('type')}</p></div>
                                         </div>
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label>Property Description</Label>
-                                        <Controller
-                                            name="description"
-                                            control={control}
-                                            render={({ field }) => (
-                                                <Textarea {...field} placeholder="Tell us more about the property..." className="min-h-[120px] rounded-2xl" />
-                                            )}
-                                        />
-                                    </div>
+
                                 </div>
                                 <div className="p-6 bg-primary/5 rounded-3xl border border-primary/20">
                                     <div className="flex items-start space-x-3">

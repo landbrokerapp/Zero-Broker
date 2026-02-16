@@ -102,10 +102,10 @@ export default function PostProperty() {
               <CheckCircle className="w-10 h-10 text-green-500" />
             </div>
             <h1 className="font-display text-4xl font-bold text-foreground mb-6">
-              Listing Submitted!
+              Property Sent for Admin Review!
             </h1>
             <p className="text-muted-foreground mb-8 text-lg">
-              Thank you! Your property is now being verified by our team and will be live shortly.
+              Thank you! Your property has been submitted and is currently pending admin review. Once approved, it will be visible on the platform.
             </p>
             <div className="flex flex-col gap-3">
               <Link to="/my-properties" className="w-full">
