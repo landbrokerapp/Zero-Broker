@@ -38,7 +38,7 @@ export function Header() {
                         <div className="w-10 h-10 bg-gradient-hero rounded-xl flex items-center justify-center">
                             <Building2 className="w-6 h-6 text-primary-foreground" />
                         </div>
-                        <span className="font-display font-bold text-xl text-foreground">
+                        <span className="font-display font-bold text-xl text-foreground hidden sm:inline-block">
                             Zero<span className="text-primary">Broker</span>
                         </span>
                     </Link>
@@ -60,7 +60,7 @@ export function Header() {
                     </nav>
 
                     {/* Right Actions */}
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 md:gap-3">
                         {/* Location Badge */}
                         <div className="hidden lg:flex items-center gap-2 px-4 py-2 bg-muted/50 rounded-full border border-border">
                             <MapPin className="w-4 h-4 text-primary" />
@@ -136,7 +136,7 @@ export function Header() {
                             </DropdownMenu>
                         ) : (
                             <Link to="/auth">
-                                <Button className="bg-gradient-hero hover:opacity-90 text-primary-foreground">
+                                <Button className="bg-gradient-hero hover:opacity-90 text-primary-foreground h-9 px-3 text-xs md:h-10 md:px-4 md:text-sm">
                                     {t('login')}
                                 </Button>
                             </Link>
