@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { MessageCircle, X, Send, Sparkles, Upload, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
-import { localities, budgetRanges } from '@/data/mockProperties';
+import { localities, tamilNaduCities, budgetRanges } from '@/data/mockProperties';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface Message {
@@ -20,6 +20,10 @@ interface ChatState {
   searchIntent?: 'buy' | 'rent' | 'pg';
   searchCity?: string;
   searchLocality?: string;
+  searchType?: string;
+  searchBudget?: string;
+  searchBHK?: string;
+  searchFurnishing?: string;
 
   // Post Property State
   postPurpose?: 'Sale' | 'Rent' | 'PG';
@@ -146,15 +150,20 @@ export function ChatBot() {
 
     // 202: Property Type
     if (step === 202) {
+      // Validate Property Type
+      if (!input) {
+        addMessage("Please select a property type.", 'bot');
+        return;
+      }
       setChatState(prev => ({ ...prev, postType: input, step: 203 }));
-      addMessage("Which *City* is your property located in?", 'bot'); // Ask City
+      addMessage("Which City is your property located in?", 'bot'); // Ask City
       return;
     }
 
     // 203: City -> Ask Locality
     if (step === 203) {
       setChatState(prev => ({ ...prev, postCity: input, step: 204 }));
-      addMessage("Great! Now, which *Area / Locality*? (e.g., Gandhipuram, RS Puram)", 'bot');
+      addMessage("Great! Now, which Area / Locality? (e.g., Gandhipuram, RS Puram)", 'bot');
       return;
     }
 
@@ -169,19 +178,19 @@ export function ChatBot() {
       if (type.includes('Plot') || type.includes('Land')) {
         // Skip Bedroom/Bath logic for Land
         setChatState(prev => ({ ...prev, postLocality: loc, step: 301 })); // Jump to Land Area
-        addMessage("Got it. What is the total **Plot Area**? (e.g., 1200 sqft, 5 cents)", 'bot');
+        addMessage("Got it. What is the total Plot Area? (e.g., 1200 sqft, 5 cents)", 'bot');
       } else if (type.includes('Commercial') || type.includes('Shop')) {
         // Commercial Logic
         setChatState(prev => ({ ...prev, postLocality: loc, step: 310 })); // Jump to Comm Area
-        addMessage("What is the **Built-up Area**? (sqft)", 'bot');
+        addMessage("What is the Built-up Area? (sqft)", 'bot');
       } else if (chatState.postPurpose === 'PG') {
         // PG Logic
         setChatState(prev => ({ ...prev, postLocality: loc, step: 320 })); // Jump to PG Beds
-        addMessage("How much is the **Rent per Bed**? (₹)", 'bot');
+        addMessage("How much is the Rent per Bed? (₹)", 'bot');
       } else {
         // Residential (House/Apt/Villa)
         setChatState(prev => ({ ...prev, postLocality: loc, step: 205 })); // Continue to Bedrooms
-        addMessage("How many **Bedrooms** (BHK)?", 'bot', ['1 BHK', '2 BHK', '3 BHK', '4+ BHK']);
+        addMessage("How many Bedrooms (BHK)?", 'bot', ['1 BHK', '2 BHK', '3 BHK', '4+ BHK']);
       }
       return;
     }
@@ -189,17 +198,17 @@ export function ChatBot() {
     // --- RESIDENTIAL FLOW (Apt/House) ---
     if (step === 205) { // BHK Received
       setChatState(prev => ({ ...prev, postBHK: input, step: 206 }));
-      addMessage("How many **Bathrooms**?", 'bot', ['1', '2', '3+']);
+      addMessage("How many Bathrooms?", 'bot', ['1', '2', '3+']);
       return;
     }
     if (step === 206) { // Bathrooms Received, Ask Furnishing
       setChatState(prev => ({ ...prev, tempData: { ...tempData, bathrooms: input }, step: 207 }));
-      addMessage("What is the **Furnishing** status?", 'bot', ['Fully Furnished', 'Semi Furnished', 'Unfurnished']);
+      addMessage("What is the Furnishing status?", 'bot', ['Fully Furnished', 'Semi Furnished', 'Unfurnished']);
       return;
     }
     if (step === 207) { // Furnishing Received, Ask Area
       setChatState(prev => ({ ...prev, tempData: { ...tempData, furnishing: input }, step: 208 }));
-      addMessage("What is the **Built-up Area** in sqft?", 'bot');
+      addMessage("What is the Built-up Area in sqft?", 'bot');
       return;
     }
     if (step === 208) { // Area Received, Go to Pricing
@@ -211,7 +220,7 @@ export function ChatBot() {
     // --- LAND FLOW ---
     if (step === 301) { // Plot Area Received
       setChatState(prev => ({ ...prev, postArea: input, step: 302 }));
-      addMessage("Any specific **Facing**?", 'bot', ['North', 'South', 'East', 'West', 'Corner Bit']);
+      addMessage("Any specific Facing?", 'bot', ['North', 'South', 'East', 'West', 'Corner Bit']);
       return;
     }
     if (step === 302) { // Facing Received, Go to Pricing
@@ -223,7 +232,7 @@ export function ChatBot() {
     // --- COMMERCIAL FLOW ---
     if (step === 310) { // Comm Area Received
       setChatState(prev => ({ ...prev, postArea: input, step: 311 }));
-      addMessage("Does it include **Washroom** and **Parking**?", 'bot', ['Yes, Both', 'Only Parking', 'Only Washroom', 'None']);
+      addMessage("Does it include Washroom and Parking?", 'bot', ['Yes, Both', 'Only Parking', 'Only Washroom', 'None']);
       return;
     }
     if (step === 311) { // Amenities Received, Go to Pricing
@@ -235,12 +244,12 @@ export function ChatBot() {
     // --- PG FLOW ---
     if (step === 320) { // Rent per Bed Received (Pricing IS the first step for PG often, but here we did it early)
       setChatState(prev => ({ ...prev, postPrice: input, step: 321 }));
-      addMessage("What is the **Sharing Type**?", 'bot', ['Single', 'Double', 'Triple', '3+ Sharing']);
+      addMessage("What is the Sharing Type?", 'bot', ['Single', 'Double', 'Triple', '3+ Sharing']);
       return;
     }
     if (step === 321) {
       setChatState(prev => ({ ...prev, tempData: { ...tempData, pgSharing: input }, step: 322 }));
-      addMessage("Is **Food** included?", 'bot', ['Yes', 'No', 'Available at extra cost']);
+      addMessage("Is Food included?", 'bot', ['Yes', 'No', 'Available at extra cost']);
       return;
     }
     if (step === 322) { // PG Done, Go to Photos
@@ -289,13 +298,13 @@ export function ChatBot() {
   };
 
   const askPricing = (purpose: string) => {
-    const prompt = purpose === 'Sale' ? "What is the **Expected Price**? (₹)" : "What is the **Monthly Rent**? (₹)";
+    const prompt = purpose === 'Sale' ? "What is the Expected Price? (₹)" : "What is the Monthly Rent? (₹)";
     addMessage(prompt, 'bot');
   };
 
   const askPhotos = () => {
     setChatState(prev => ({ ...prev, step: 500 }));
-    addMessage("Would you like to **Upload Photos** now?", 'bot', ['Upload Photos 📸', 'Skip for Now']);
+    addMessage("Would you like to Upload Photos now?", 'bot', ['Upload Photos 📸', 'Skip for Now']);
   };
 
   const finalizePost = () => {
@@ -340,48 +349,95 @@ export function ChatBot() {
     const { step, searchIntent } = chatState;
 
     if (step === 2) { // City selected
+      // Validate City
+      if (!tamilNaduCities[input]) {
+        addMessage(`I don't have data for ${input} yet. Please select from the list.`, 'bot');
+        return;
+      }
       setChatState(prev => ({ ...prev, searchCity: input, step: 3 }));
-      addMessage(`Great! Which area in ${input} are you interested in?`, 'bot', localities.slice(0, 8));
+      // Get localities for the selected city
+      const cityLocalities = tamilNaduCities[input] || [];
+      addMessage(`Great! Which area in ${input} are you interested in?`, 'bot', cityLocalities.slice(0, 8)); // Show first 8
       return;
     }
 
     if (step === 3) { // Locality selected
       setChatState(prev => ({ ...prev, searchLocality: input, step: 4 }));
+
+      const isPG = searchIntent === 'pg';
+      const typeOptions = isPG
+        ? ['PG for Men', 'PG for Women', 'PG for Coliving']
+        : ['Apartment / Flat', 'Independent House', 'Villa', 'Plot / Land', 'Commercial'];
+
+      addMessage("What type of property are you looking for?", 'bot', typeOptions);
+      return;
+    }
+
+    if (step === 4) { // Type selected
+      setChatState(prev => ({ ...prev, searchType: input, step: 5 }));
+
       const budgetOptions = searchIntent === 'buy'
         ? budgetRanges.buy.map((b) => b.label)
         : searchIntent === 'pg'
           ? budgetRanges.pg.map((b) => b.label)
           : budgetRanges.rent.map((b) => b.label);
-      addMessage(`${input} is a wonderful locality! What's your budget?`, 'bot', budgetOptions);
+
+      addMessage("What's your budget?", 'bot', budgetOptions);
       return;
     }
 
-    if (step === 4) { // Budget selected
-      setChatState(prev => ({ ...prev, step: 5, budget: input }));
-      addMessage("Perfect! What type of property are you looking for?", 'bot', ['1 BHK', '2 BHK', '3 BHK', 'Any Type']);
+    if (step === 5) { // Budget selected
+      setChatState(prev => ({ ...prev, searchBudget: input, step: 6 }));
+
+      const type = chatState.searchType || '';
+
+      if (type.includes('Plot') || type.includes('Commercial') || type.includes('Shop')) {
+        // Skip BHK/Furnishing for Plot/Commercial -> Go to Finish
+        finishSearch(input);
+        return;
+      }
+
+      if (searchIntent === 'pg') {
+        // For PG, maybe ask Sharing?
+        addMessage("What sharing type do you prefer?", 'bot', ['Single', 'Double', 'Triple', 'Any']);
+      } else {
+        // Residential
+        addMessage("How many Bedrooms (BHK)?", 'bot', ['1 BHK', '2 BHK', '3 BHK', '4+ BHK']);
+      }
       return;
     }
 
-    if (step === 5) { // Property type
-      setChatState(prev => ({ ...prev, step: 6, propertyType: input }));
-      addMessage("Last question - what's your furnishing preference?", 'bot', ['Fully Furnished', 'Semi Furnished', 'Unfurnished', 'Any']);
+    if (step === 6) { // BHK/Sharing selected
+      setChatState(prev => ({ ...prev, searchBHK: input, step: 7 }));
+
+      if (searchIntent === 'pg') {
+        // Skip Furnishing for PG (usually furnished) or ask Food?
+        finishSearch(input);
+      } else {
+        addMessage("And your furnishing preference?", 'bot', ['Fully Furnished', 'Semi Furnished', 'Unfurnished']);
+      }
       return;
     }
 
-    if (step === 6) { // Furnishing -> Search
-      setChatState(prev => ({ ...prev, step: 7, furnishing: input }));
-      addMessage("🎉 Great! I've found some matching properties for you. Let me show you the results!", 'bot');
-
-      setTimeout(() => {
-        const params = new URLSearchParams();
-        if (chatState.searchIntent) params.set('intent', chatState.searchIntent);
-        if (chatState.searchCity) params.set('city', chatState.searchCity);
-        if (chatState.searchLocality) params.set('locality', chatState.searchLocality);
-        navigate(`/properties?${params.toString()}`);
-        setIsOpen(false);
-        setChatState({ step: 1, mode: 'search', tempData: {} });
-      }, 1500);
+    if (step === 7) { // Furnishing selected
+      setChatState(prev => ({ ...prev, searchFurnishing: input }));
+      finishSearch(input);
     }
+  };
+
+  const finishSearch = (lastInput: string) => {
+    addMessage("🎉 Great! I've found some matching properties for you. Let me show you the results!", 'bot');
+
+    setTimeout(() => {
+      const params = new URLSearchParams();
+      if (chatState.searchIntent) params.set('intent', chatState.searchIntent);
+      if (chatState.searchCity) params.set('city', chatState.searchCity || '');
+      if (chatState.searchLocality) params.set('locality', chatState.searchLocality || '');
+      // We could add more params here if the properties page supported them
+      navigate(`/properties?${params.toString()}`);
+      setIsOpen(false);
+      setChatState({ step: 1, mode: 'search', tempData: {} });
+    }, 1500);
   };
 
   return (
