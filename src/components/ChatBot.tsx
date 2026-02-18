@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MessageCircle, X, Send, Sparkles, Upload, CheckCircle } from 'lucide-react';
+import { MessageCircle, X, Send, Sparkles, Upload, CheckCircle, MapPin, Building2, Home, Building, TreePine, Warehouse, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
-import { localities, tamilNaduCities, budgetRanges } from '@/data/mockProperties';
+import { tamilNaduCities, budgetRanges } from '@/data/mockProperties';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface Message {
@@ -11,12 +11,13 @@ interface Message {
   type: 'bot' | 'user';
   content: React.ReactNode;
   options?: string[];
+  cityPicker?: boolean;
+  localityPicker?: string; // city name to show localities for
 }
 
 interface ChatState {
   step: number;
-  mode: 'search' | 'post'; // Top level mode
-  // Search State
+  mode: 'search' | 'post';
   searchIntent?: 'buy' | 'rent' | 'pg';
   searchCity?: string;
   searchLocality?: string;
@@ -24,19 +25,80 @@ interface ChatState {
   searchBudget?: string;
   searchBHK?: string;
   searchFurnishing?: string;
-
-  // Post Property State
   postPurpose?: 'Sale' | 'Rent' | 'PG';
-  postType?: string; // Apartment, Villa, Plot, etc.
+  postType?: string;
   postCity?: string;
   postLocality?: string;
   postBHK?: string;
   postArea?: string;
   postPrice?: string;
   postImages?: File[];
-  tempData?: any; // To store intermediate answers like bathrooms, furnishing, etc.
+  tempData?: any;
 }
 
+// ── City metadata for the visual city picker ──────────────────────────────────
+const CITY_META: Record<string, { emoji: string; tagline: string }> = {
+  'Coimbatore': { emoji: '🏙️', tagline: 'Manchester of South India' },
+  'Chennai': { emoji: '🌊', tagline: 'Capital City' },
+  'Madurai': { emoji: '🛕', tagline: 'Temple City' },
+  'Trichy': { emoji: '🏛️', tagline: 'Rock Fort City' },
+  'Salem': { emoji: '⚙️', tagline: 'Steel City' },
+  'Tiruppur': { emoji: '👕', tagline: 'Knitwear Capital' },
+  'Erode': { emoji: '🌿', tagline: 'Turmeric City' },
+  'Vellore': { emoji: '🏰', tagline: 'Fort City' },
+  'Tirunelveli': { emoji: '🌾', tagline: 'Wheat Halwa City' },
+  'Thoothukudi': { emoji: '⚓', tagline: 'Port City' },
+  'Hosur': { emoji: '🏭', tagline: 'Industrial Hub' },
+  'Kancheepuram': { emoji: '🧵', tagline: 'Silk City' },
+  'Thanjavur': { emoji: '🎭', tagline: 'Cultural Capital' },
+  'Nagercoil': { emoji: '🌴', tagline: 'Cape City' },
+};
+
+// ── City Picker Component ─────────────────────────────────────────────────────
+function CityPicker({ onSelect }: { onSelect: (city: string) => void }) {
+  const cities = Object.keys(tamilNaduCities);
+  return (
+    <div className="mt-3 grid grid-cols-2 gap-2">
+      {cities.map(city => {
+        const meta = CITY_META[city] ?? { emoji: '🏙️', tagline: '' };
+        return (
+          <button
+            key={city}
+            onClick={() => onSelect(city)}
+            className="flex items-center gap-2 px-3 py-2.5 bg-card border border-border rounded-xl hover:border-primary hover:bg-primary/5 transition-all text-left group"
+          >
+            <span className="text-xl leading-none">{meta.emoji}</span>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">{city}</p>
+              {meta.tagline && <p className="text-[10px] text-muted-foreground truncate">{meta.tagline}</p>}
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Locality Picker Component ─────────────────────────────────────────────────
+function LocalityPicker({ city, onSelect }: { city: string; onSelect: (loc: string) => void }) {
+  const localities = tamilNaduCities[city] ?? [];
+  return (
+    <div className="mt-3 flex flex-wrap gap-2">
+      {localities.map(loc => (
+        <button
+          key={loc}
+          onClick={() => onSelect(loc)}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-card border border-border rounded-full text-xs font-medium text-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-all"
+        >
+          <MapPin className="w-3 h-3 flex-shrink-0" />
+          {loc}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ── Main ChatBot ──────────────────────────────────────────────────────────────
 export function ChatBot() {
   const [isOpen, setIsOpen] = useState(false);
   const { user } = useAuth();
@@ -47,42 +109,37 @@ export function ChatBot() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
-  // Scroll to bottom on new message
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Initialize Greeting
   useEffect(() => {
     const greeting = user
-      ? `Hello! ${user.name} 👋 I'm your property search assistant. Let me help you find your perfect property. What are you looking for?`
-      : "Hello! 👋 I'm your property search assistant. Let me help you find your perfect property. What are you looking for?";
-
-    setMessages([
-      {
-        id: '1',
-        type: 'bot',
-        content: greeting,
-        options: ['Buy', 'Rent', 'PG / Co-Living', 'Post Your Property'],
-      }
-    ]);
+      ? `Hello ${user.name.split(' ')[0]}! 👋 I'm your property assistant. What are you looking for?`
+      : "Hello! 👋 I'm your property assistant. What are you looking for?";
+    setMessages([{
+      id: '1',
+      type: 'bot',
+      content: greeting,
+      options: ['🏠 Buy', '🔑 Rent', '🛏️ PG / Co-Living', '📋 Post Your Property'],
+    }]);
   }, [user]);
 
-  const addMessage = (content: React.ReactNode, type: 'bot' | 'user', options?: string[]) => {
-    const newMessage: Message = {
+  const addMessage = (content: React.ReactNode, type: 'bot' | 'user', options?: string[], extra?: Partial<Message>) => {
+    setMessages(prev => [...prev, {
       id: Date.now().toString(),
       type,
       content,
       options,
-    };
-    setMessages((prev) => [...prev, newMessage]);
+      ...extra,
+    }]);
   };
 
-  // --- HANDLERS ---
-
   const handleOptionSelect = (option: string) => {
+    // Strip emoji prefix for processing
+    const clean = option.replace(/^[\p{Emoji}\s]+/u, '').trim();
     addMessage(option, 'user');
-    processInput(option);
+    processInput(clean);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -95,156 +152,125 @@ export function ChatBot() {
 
   const processInput = (input: string) => {
     setTimeout(() => {
-      // --- GLOBAL INTENT DETECTION (Step 1) ---
       if (chatState.step === 1) {
-        if (input === 'Post Your Property' || input.toLowerCase().includes('post') || input.toLowerCase().includes('sell')) {
+        if (input.toLowerCase().includes('post') || input.toLowerCase().includes('sell')) {
           startPostFlow();
         } else {
           startSearchFlow(input);
         }
         return;
       }
-
-      // --- ROUTE TO CORRECT FLOW ---
       if (chatState.mode === 'post') {
         handlePostFlow(input);
       } else {
         handleSearchFlow(input);
       }
-    }, 500);
+    }, 400);
   };
 
-  // ==========================================
-  //            POST PROPERTY FLOW
-  // ==========================================
+  // ── POST FLOW ───────────────────────────────────────────────────────────────
 
   const startPostFlow = () => {
     setChatState(prev => ({ ...prev, mode: 'post', step: 201, tempData: {} }));
-    addMessage("Great 👍 Let’s post your property. It will take just 2–3 minutes. First, are you looking to Sell, Rent out, or list a PG?", 'bot', ['Sale', 'Rent', 'PG']);
+    addMessage("Great! 👍 Let's post your property. Are you looking to Sell, Rent out, or list a PG?", 'bot', ['Sale', 'Rent', 'PG']);
   };
 
   const handlePostFlow = (input: string) => {
     const { step, postPurpose, postType, tempData } = chatState;
 
-    // 201: Purpose Selection
     if (step === 201) {
-      // Validate
       if (!['Sale', 'Rent', 'PG'].includes(input)) {
         addMessage("Please select one of the options below.", 'bot', ['Sale', 'Rent', 'PG']);
         return;
       }
       const purpose = input as 'Sale' | 'Rent' | 'PG';
-
-      // Next: Property Type based on purpose
-      let options: string[] = [];
-      if (purpose === 'PG') {
-        options = ['PG for Men', 'PG for Women', 'PG for Coliving'];
-      } else {
-        options = ['Apartment / Flat', 'Independent House', 'Villa', 'Plot / Land', 'Commercial Office', 'Shop / Showroom'];
-      }
-
+      const options = purpose === 'PG'
+        ? ['PG for Men', 'PG for Women', 'PG for Coliving']
+        : ['Apartment / Flat', 'Independent House', 'Villa', 'Plot / Land', 'Commercial Office', 'Shop / Showroom'];
       setChatState(prev => ({ ...prev, postPurpose: purpose, step: 202 }));
       addMessage(`Okay, for ${purpose}. What type of property is it?`, 'bot', options);
       return;
     }
 
-    // 202: Property Type
     if (step === 202) {
-      // Validate Property Type
-      if (!input) {
-        addMessage("Please select a property type.", 'bot');
-        return;
-      }
       setChatState(prev => ({ ...prev, postType: input, step: 203 }));
-      addMessage("Which City is your property located in?", 'bot'); // Ask City
+      // Show city picker
+      addMessage("Which city is your property in? 🏙️", 'bot', undefined, { cityPicker: true });
       return;
     }
 
-    // 203: City -> Ask Locality
     if (step === 203) {
       setChatState(prev => ({ ...prev, postCity: input, step: 204 }));
-      addMessage("Great! Now, which Area / Locality? (e.g., Gandhipuram, RS Puram)", 'bot');
+      // Show locality picker for selected city
+      addMessage(`Great! Which area in ${input}?`, 'bot', undefined, { localityPicker: input });
       return;
     }
 
-    // 204: Locality -> Ask Smart Details (Branching Logic)
     if (step === 204) {
       const loc = input;
-      setChatState(prev => ({ ...prev, postLocality: input, step: 205 }));
-
-      // Determine next question based on Property Type
       const type = postType || '';
-
       if (type.includes('Plot') || type.includes('Land')) {
-        // Skip Bedroom/Bath logic for Land
-        setChatState(prev => ({ ...prev, postLocality: loc, step: 301 })); // Jump to Land Area
-        addMessage("Got it. What is the total Plot Area? (e.g., 1200 sqft, 5 cents)", 'bot');
+        setChatState(prev => ({ ...prev, postLocality: loc, step: 301 }));
+        addMessage("What is the total Plot Area? (e.g., 1200 sqft, 5 cents)", 'bot');
       } else if (type.includes('Commercial') || type.includes('Shop')) {
-        // Commercial Logic
-        setChatState(prev => ({ ...prev, postLocality: loc, step: 310 })); // Jump to Comm Area
+        setChatState(prev => ({ ...prev, postLocality: loc, step: 310 }));
         addMessage("What is the Built-up Area? (sqft)", 'bot');
       } else if (chatState.postPurpose === 'PG') {
-        // PG Logic
-        setChatState(prev => ({ ...prev, postLocality: loc, step: 320 })); // Jump to PG Beds
+        setChatState(prev => ({ ...prev, postLocality: loc, step: 320 }));
         addMessage("How much is the Rent per Bed? (₹)", 'bot');
       } else {
-        // Residential (House/Apt/Villa)
-        setChatState(prev => ({ ...prev, postLocality: loc, step: 205 })); // Continue to Bedrooms
+        setChatState(prev => ({ ...prev, postLocality: loc, step: 205 }));
         addMessage("How many Bedrooms (BHK)?", 'bot', ['1 BHK', '2 BHK', '3 BHK', '4+ BHK']);
       }
       return;
     }
 
-    // --- RESIDENTIAL FLOW (Apt/House) ---
-    if (step === 205) { // BHK Received
+    if (step === 205) {
       setChatState(prev => ({ ...prev, postBHK: input, step: 206 }));
       addMessage("How many Bathrooms?", 'bot', ['1', '2', '3+']);
       return;
     }
-    if (step === 206) { // Bathrooms Received, Ask Furnishing
+    if (step === 206) {
       setChatState(prev => ({ ...prev, tempData: { ...tempData, bathrooms: input }, step: 207 }));
-      addMessage("What is the Furnishing status?", 'bot', ['Fully Furnished', 'Semi Furnished', 'Unfurnished']);
+      addMessage("Furnishing status?", 'bot', ['Fully Furnished', 'Semi Furnished', 'Unfurnished']);
       return;
     }
-    if (step === 207) { // Furnishing Received, Ask Area
+    if (step === 207) {
       setChatState(prev => ({ ...prev, tempData: { ...tempData, furnishing: input }, step: 208 }));
-      addMessage("What is the Built-up Area in sqft?", 'bot');
+      addMessage("Built-up Area in sqft?", 'bot');
       return;
     }
-    if (step === 208) { // Area Received, Go to Pricing
-      setChatState(prev => ({ ...prev, postArea: input, step: 400 })); // Jump to Pricing
+    if (step === 208) {
+      setChatState(prev => ({ ...prev, postArea: input, step: 400 }));
       askPricing(chatState.postPurpose!);
       return;
     }
 
-    // --- LAND FLOW ---
-    if (step === 301) { // Plot Area Received
+    if (step === 301) {
       setChatState(prev => ({ ...prev, postArea: input, step: 302 }));
       addMessage("Any specific Facing?", 'bot', ['North', 'South', 'East', 'West', 'Corner Bit']);
       return;
     }
-    if (step === 302) { // Facing Received, Go to Pricing
+    if (step === 302) {
       setChatState(prev => ({ ...prev, tempData: { ...tempData, facing: input }, step: 400 }));
       askPricing(chatState.postPurpose!);
       return;
     }
 
-    // --- COMMERCIAL FLOW ---
-    if (step === 310) { // Comm Area Received
+    if (step === 310) {
       setChatState(prev => ({ ...prev, postArea: input, step: 311 }));
       addMessage("Does it include Washroom and Parking?", 'bot', ['Yes, Both', 'Only Parking', 'Only Washroom', 'None']);
       return;
     }
-    if (step === 311) { // Amenities Received, Go to Pricing
+    if (step === 311) {
       setChatState(prev => ({ ...prev, tempData: { ...tempData, commAmenities: input }, step: 400 }));
       askPricing(chatState.postPurpose!);
       return;
     }
 
-    // --- PG FLOW ---
-    if (step === 320) { // Rent per Bed Received (Pricing IS the first step for PG often, but here we did it early)
+    if (step === 320) {
       setChatState(prev => ({ ...prev, postPrice: input, step: 321 }));
-      addMessage("What is the Sharing Type?", 'bot', ['Single', 'Double', 'Triple', '3+ Sharing']);
+      addMessage("Sharing type?", 'bot', ['Single', 'Double', 'Triple', '3+ Sharing']);
       return;
     }
     if (step === 321) {
@@ -252,26 +278,21 @@ export function ChatBot() {
       addMessage("Is Food included?", 'bot', ['Yes', 'No', 'Available at extra cost']);
       return;
     }
-    if (step === 322) { // PG Done, Go to Photos
+    if (step === 322) {
       setChatState(prev => ({ ...prev, tempData: { ...tempData, pgFood: input }, step: 500 }));
       askPhotos();
       return;
     }
 
-
-    // --- PRICING FLOW (Generic) ---
-    if (step === 400) { // Price Received
+    if (step === 400) {
       setChatState(prev => ({ ...prev, postPrice: input, step: 500 }));
-      // If rent, ask security? Skip for simplicity in chat
       askPhotos();
       return;
     }
 
-    // --- PHOTOS ---
     if (step === 500) {
       if (input === 'Upload Photos 📸') {
-        // Simulate trigger hidden input
-        if (fileInputRef.current) fileInputRef.current.click();
+        fileInputRef.current?.click();
         return;
       }
       if (input === 'Skip for Now') {
@@ -281,18 +302,16 @@ export function ChatBot() {
       return;
     }
 
-    // --- FINAL CONFIRMATION ---
     if (step === 600) {
       if (input.includes('Submit')) {
-        addMessage("🎉 **Your property is successfully posted!** Our team will review and make it live shortly.", 'bot');
-        // Optional: Redirect or Reset
+        addMessage("🎉 Your property is successfully posted! Our team will review and make it live shortly.", 'bot');
         setTimeout(() => {
           setIsOpen(false);
           setChatState({ step: 1, mode: 'search', tempData: {} });
-          setMessages([]); // Or keep history
+          setMessages([]);
         }, 4000);
       } else {
-        addMessage("Okay, you can restart the process anytime.", 'bot');
+        addMessage("Okay, you can restart anytime.", 'bot');
       }
     }
   };
@@ -304,23 +323,21 @@ export function ChatBot() {
 
   const askPhotos = () => {
     setChatState(prev => ({ ...prev, step: 500 }));
-    addMessage("Would you like to Upload Photos now?", 'bot', ['Upload Photos 📸', 'Skip for Now']);
+    addMessage("Would you like to upload photos now?", 'bot', ['Upload Photos 📸', 'Skip for Now']);
   };
 
   const finalizePost = () => {
     setChatState(prev => ({ ...prev, step: 600 }));
     const { postPurpose, postType, postLocality, postCity, postPrice } = chatState;
-
     const summary = (
-      <div className="bg-muted/50 p-3 rounded-lg text-sm space-y-2 border border-border mt-2">
+      <div className="bg-muted/50 p-3 rounded-lg text-sm space-y-1.5 border border-border mt-2">
         <p><strong>Type:</strong> {postType} ({postPurpose})</p>
         <p><strong>Location:</strong> {postLocality}, {postCity}</p>
         <p><strong>Price:</strong> {postPrice}</p>
         <p className="text-xs text-muted-foreground mt-2">Ready to submit?</p>
       </div>
     );
-
-    addMessage(<div>Here is a summary of your property: {summary}</div>, 'bot');
+    addMessage(<div>Here's a summary of your property: {summary}</div>, 'bot');
     setTimeout(() => {
       addMessage("Do you want to submit this property?", 'bot', ['✅ Submit Property', '❌ Cancel']);
     }, 500);
@@ -328,118 +345,121 @@ export function ChatBot() {
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      addMessage(`📸 ${e.target.files.length} photos selected.`, 'user');
+      addMessage(`📸 ${e.target.files.length} photo(s) selected.`, 'user');
       setChatState(prev => ({ ...prev, postImages: Array.from(e.target.files || []) }));
       setTimeout(() => finalizePost(), 1000);
     }
   };
 
-
-  // ==========================================
-  //            SEARCH FLOW (Original)
-  // ==========================================
+  // ── SEARCH FLOW ─────────────────────────────────────────────────────────────
 
   const startSearchFlow = (input: string) => {
-    const intent = input.toLowerCase().includes('pg') ? 'pg' : input.toLowerCase() as 'buy' | 'rent'; // Simple heuristic
-    setChatState(prev => ({ ...prev, mode: 'search', step: 2, searchIntent: intent }));
-    addMessage('Great choice! Which city are you looking in?', 'bot', ['Coimbatore', 'Chennai', 'Madurai', 'Trichy', 'Salem']);
+    const intent = input.toLowerCase().includes('pg') ? 'pg'
+      : input.toLowerCase().includes('rent') ? 'rent'
+        : 'buy';
+    setChatState(prev => ({ ...prev, mode: 'search', step: 2, searchIntent: intent as any }));
+
+    // Step 2: Ask property type FIRST (OLX / MagicBricks style)
+    const isPG = intent === 'pg';
+    const typeOptions = isPG
+      ? ['PG for Men', 'PG for Women', 'PG for Coliving']
+      : ['🏢 Apartment / Flat', '🏠 Independent House', '🏡 Villa', '🌳 Plot / Land', '🏬 Commercial'];
+    addMessage("What type of property are you looking for?", 'bot', typeOptions);
   };
 
   const handleSearchFlow = (input: string) => {
     const { step, searchIntent } = chatState;
 
-    if (step === 2) { // City selected
-      // Validate City
+    // Step 2 → Property Type received → ask City
+    if (step === 2) {
+      const clean = input.replace(/^[\p{Emoji}\s]+/u, '').trim();
+      setChatState(prev => ({ ...prev, searchType: clean, step: 3 }));
+      addMessage("Which city are you looking in? 🏙️", 'bot', undefined, { cityPicker: true });
+      return;
+    }
+
+    // Step 3 → City received → ask Locality
+    if (step === 3) {
       if (!tamilNaduCities[input]) {
-        addMessage(`I don't have data for ${input} yet. Please select from the list.`, 'bot');
+        addMessage(`I don't have data for "${input}" yet. Please pick a city below.`, 'bot', undefined, { cityPicker: true });
         return;
       }
-      setChatState(prev => ({ ...prev, searchCity: input, step: 3 }));
-      // Get localities for the selected city
-      const cityLocalities = tamilNaduCities[input] || [];
-      addMessage(`Great! Which area in ${input} are you interested in?`, 'bot', cityLocalities.slice(0, 8)); // Show first 8
+      setChatState(prev => ({ ...prev, searchCity: input, step: 4 }));
+      addMessage(`Great! Which area in ${input} are you interested in?`, 'bot', undefined, { localityPicker: input });
       return;
     }
 
-    if (step === 3) { // Locality selected
-      setChatState(prev => ({ ...prev, searchLocality: input, step: 4 }));
-
-      const isPG = searchIntent === 'pg';
-      const typeOptions = isPG
-        ? ['PG for Men', 'PG for Women', 'PG for Coliving']
-        : ['Apartment / Flat', 'Independent House', 'Villa', 'Plot / Land', 'Commercial'];
-
-      addMessage("What type of property are you looking for?", 'bot', typeOptions);
-      return;
-    }
-
-    if (step === 4) { // Type selected
-      setChatState(prev => ({ ...prev, searchType: input, step: 5 }));
-
+    // Step 4 → Locality received → ask Budget
+    if (step === 4) {
+      setChatState(prev => ({ ...prev, searchLocality: input, step: 5 }));
       const budgetOptions = searchIntent === 'buy'
-        ? budgetRanges.buy.map((b) => b.label)
+        ? budgetRanges.buy.map(b => b.label)
         : searchIntent === 'pg'
-          ? budgetRanges.pg.map((b) => b.label)
-          : budgetRanges.rent.map((b) => b.label);
-
+          ? budgetRanges.pg.map(b => b.label)
+          : budgetRanges.rent.map(b => b.label);
       addMessage("What's your budget?", 'bot', budgetOptions);
       return;
     }
 
-    if (step === 5) { // Budget selected
+    // Step 5 → Budget received → ask BHK / Sharing (skip for Plot/Commercial)
+    if (step === 5) {
       setChatState(prev => ({ ...prev, searchBudget: input, step: 6 }));
-
       const type = chatState.searchType || '';
-
-      if (type.includes('Plot') || type.includes('Commercial') || type.includes('Shop')) {
-        // Skip BHK/Furnishing for Plot/Commercial -> Go to Finish
+      if (type.includes('Plot') || type.includes('Commercial')) {
         finishSearch(input);
         return;
       }
-
       if (searchIntent === 'pg') {
-        // For PG, maybe ask Sharing?
-        addMessage("What sharing type do you prefer?", 'bot', ['Single', 'Double', 'Triple', 'Any']);
+        addMessage("Sharing preference?", 'bot', ['Single', 'Double', 'Triple', 'Any']);
       } else {
-        // Residential
-        addMessage("How many Bedrooms (BHK)?", 'bot', ['1 BHK', '2 BHK', '3 BHK', '4+ BHK']);
+        addMessage("How many Bedrooms (BHK)?", 'bot', ['1 BHK', '2 BHK', '3 BHK', '4+ BHK', 'Any']);
       }
       return;
     }
 
-    if (step === 6) { // BHK/Sharing selected
+    // Step 6 → BHK / Sharing received → ask Furnishing (skip for PG)
+    if (step === 6) {
       setChatState(prev => ({ ...prev, searchBHK: input, step: 7 }));
-
       if (searchIntent === 'pg') {
-        // Skip Furnishing for PG (usually furnished) or ask Food?
         finishSearch(input);
       } else {
-        addMessage("And your furnishing preference?", 'bot', ['Fully Furnished', 'Semi Furnished', 'Unfurnished']);
+        addMessage("Furnishing preference?", 'bot', ['Fully Furnished', 'Semi Furnished', 'Unfurnished', 'Any']);
       }
       return;
     }
 
-    if (step === 7) { // Furnishing selected
+    // Step 7 → Furnishing received → finish
+    if (step === 7) {
       setChatState(prev => ({ ...prev, searchFurnishing: input }));
       finishSearch(input);
     }
   };
 
-  const finishSearch = (lastInput: string) => {
-    addMessage("🎉 Great! I've found some matching properties for you. Let me show you the results!", 'bot');
-
+  const finishSearch = (_lastInput: string) => {
+    addMessage("🎉 Found matching properties! Let me show you the results.", 'bot');
     setTimeout(() => {
       const params = new URLSearchParams();
       if (chatState.searchIntent) params.set('intent', chatState.searchIntent);
-      if (chatState.searchCity) params.set('city', chatState.searchCity || '');
-      if (chatState.searchLocality) params.set('locality', chatState.searchLocality || '');
-      // We could add more params here if the properties page supported them
+      if (chatState.searchCity) params.set('city', chatState.searchCity);
+      if (chatState.searchLocality) params.set('locality', chatState.searchLocality);
       navigate(`/properties?${params.toString()}`);
       setIsOpen(false);
       setChatState({ step: 1, mode: 'search', tempData: {} });
     }, 1500);
   };
 
+  // ── City / Locality selection from pickers ──────────────────────────────────
+  const handleCityPick = (city: string) => {
+    addMessage(city, 'user');
+    processInput(city);
+  };
+
+  const handleLocalityPick = (loc: string) => {
+    addMessage(loc, 'user');
+    processInput(loc);
+  };
+
+  // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <>
       <button
@@ -456,10 +476,10 @@ export function ChatBot() {
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="fixed bottom-6 right-6 z-50 w-[380px] max-w-[calc(100vw-48px)] h-[600px] max-h-[calc(100vh-100px)] bg-card rounded-2xl shadow-2xl border border-border flex flex-col overflow-hidden"
+            className="fixed bottom-6 right-6 z-50 w-[390px] max-w-[calc(100vw-48px)] h-[620px] max-h-[calc(100vh-100px)] bg-card rounded-2xl shadow-2xl border border-border flex flex-col overflow-hidden"
           >
             {/* Header */}
-            <div className="bg-gradient-hero p-4 flex items-center justify-between">
+            <div className="bg-gradient-hero p-4 flex items-center justify-between flex-shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-background/20 rounded-full flex items-center justify-center">
                   <Sparkles className="w-5 h-5 text-primary-foreground" />
@@ -471,7 +491,10 @@ export function ChatBot() {
                   <p className="text-xs text-primary-foreground/70">Powered by ZeroBroker</p>
                 </div>
               </div>
-              <button onClick={() => setIsOpen(false)} className="w-8 h-8 rounded-full bg-background/20 flex items-center justify-center hover:bg-background/30 transition-colors">
+              <button
+                onClick={() => setIsOpen(false)}
+                className="w-8 h-8 rounded-full bg-background/20 flex items-center justify-center hover:bg-background/30 transition-colors"
+              >
                 <X className="w-4 h-4 text-primary-foreground" />
               </button>
             </div>
@@ -484,25 +507,36 @@ export function ChatBot() {
                   className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[85%] rounded-2xl px-4 py-3 ${message.type === 'user'
+                    className={`max-w-[90%] rounded-2xl px-4 py-3 ${message.type === 'user'
                       ? 'bg-primary text-primary-foreground rounded-br-md'
                       : 'bg-muted text-foreground rounded-bl-md'
                       }`}
                   >
                     <div className="text-sm">{message.content}</div>
 
+                    {/* Quick reply chips */}
                     {message.options && message.type === 'bot' && (
                       <div className="mt-3 flex flex-wrap gap-2">
                         {message.options.map((option) => (
                           <button
                             key={option}
                             onClick={() => handleOptionSelect(option)}
-                            className="px-3 py-1.5 text-xs font-medium bg-card text-foreground rounded-full border border-border hover:border-primary hover:text-primary transition-colors text-left"
+                            className="px-3 py-1.5 text-xs font-medium bg-card text-foreground rounded-full border border-border hover:border-primary hover:text-primary transition-colors"
                           >
                             {option}
                           </button>
                         ))}
                       </div>
+                    )}
+
+                    {/* City picker grid */}
+                    {message.cityPicker && message.type === 'bot' && (
+                      <CityPicker onSelect={handleCityPick} />
+                    )}
+
+                    {/* Locality chips */}
+                    {message.localityPicker && message.type === 'bot' && (
+                      <LocalityPicker city={message.localityPicker} onSelect={handleLocalityPick} />
                     )}
                   </div>
                 </div>
@@ -511,19 +545,18 @@ export function ChatBot() {
             </div>
 
             {/* Input */}
-            <form onSubmit={handleSubmit} className="p-4 border-t border-border">
+            <form onSubmit={handleSubmit} className="p-4 border-t border-border flex-shrink-0">
               <div className="flex items-center gap-2">
                 <input
                   type="text"
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
-                  placeholder="Type your answer..."
+                  placeholder="Type your answer or pick above…"
                   className="flex-1 px-4 py-2.5 bg-muted rounded-full text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
-                <Button type="submit" size="icon" className="rounded-full bg-gradient-hero hover:opacity-90">
+                <Button type="submit" size="icon" className="rounded-full bg-gradient-hero hover:opacity-90 flex-shrink-0">
                   <Send className="w-4 h-4" />
                 </Button>
-                {/* Hidden File Input for Photos */}
                 <input
                   type="file"
                   multiple

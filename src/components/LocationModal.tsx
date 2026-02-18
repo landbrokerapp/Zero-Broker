@@ -17,44 +17,42 @@ export function LocationModal({ children, onLocationSelect }: LocationModalProps
     const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
         try {
             const response = await fetch(
-                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1&zoom=18`
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1&zoom=18`,
+                { headers: { 'Accept-Language': 'en' } }
             );
             const data = await response.json();
 
-            // Log the full response for debugging
-            console.log('Geocoding response:', data);
-            console.log('Address components:', data.address);
+            console.log('Nominatim reverse geocode:', data.address);
 
-            // Extract relevant address components
-            const address = data.address;
-            const parts = [];
+            const a = data.address ?? {};
 
-            // Prioritize most specific location first (in English)
-            // Check for very specific locations first
-            if (address.hamlet) parts.push(address.hamlet);
-            else if (address.village) parts.push(address.village);
-            else if (address.neighbourhood) parts.push(address.neighbourhood);
-            else if (address.suburb) parts.push(address.suburb);
-            else if (address.locality) parts.push(address.locality);
-            else if (address.quarter) parts.push(address.quarter);
-            else if (address.road) parts.push(address.road);
+            // ── OLX / Zomato style: return ONLY the sublocality name ──────────
+            // Maps to Google's: neighborhood > sublocality_level_1 > sublocality_level_2
+            //
+            // Nominatim field mapping:
+            //   neighbourhood  → Google neighborhood / sublocality_level_1
+            //   suburb         → Google sublocality_level_1 / sublocality_level_2
+            //   quarter        → Google sublocality_level_2
+            //   city_district  → Google sublocality_level_1 (for some cities)
+            //   village/hamlet → rural equivalent of neighbourhood
+            //   locality       → fallback sublocality
+            //   city/town      → last resort (city-level, not sub)
 
-            // Add city/town level
-            if (address.city) parts.push(address.city);
-            else if (address.town) parts.push(address.town);
-            else if (address.municipality) parts.push(address.municipality);
+            const sublocality =
+                a.neighbourhood ||   // ← Google: neighborhood / sublocality_level_1
+                a.suburb ||   // ← Google: sublocality_level_1 / sublocality_level_2
+                a.quarter ||   // ← Google: sublocality_level_2
+                a.city_district ||   // ← Google: sublocality_level_1 (some cities)
+                a.village ||   // rural neighbourhood equivalent
+                a.hamlet ||   // very small rural area
+                a.locality ||   // generic locality fallback
+                a.city ||   // city-level fallback
+                a.town ||
+                a.municipality ||
+                '';
 
-            // Add state/region
-            if (address.state) parts.push(address.state);
-            else if (address.state_district) parts.push(address.state_district);
+            return sublocality || data.display_name?.split(',')[0] || 'Current Location';
 
-            // If we got specific parts, use them; otherwise use display_name
-            if (parts.length > 0) {
-                return parts.join(', ');
-            } else {
-                // Fallback: use display_name but try to clean it up
-                return data.display_name || 'Current Location';
-            }
         } catch (error) {
             console.error('Reverse geocoding error:', error);
             return 'Current Location';

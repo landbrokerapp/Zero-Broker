@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, MessageCircle, MapPin, ArrowRight, Building2, Home, Building, Warehouse, TreePine, Users, CheckCircle2, CalendarCheck, Handshake } from 'lucide-react';
+import { Search, MessageCircle, MapPin, ArrowRight, Building2, Home, Building, Warehouse, TreePine, Users, CheckCircle2, CalendarCheck, Handshake, Navigation, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
@@ -43,14 +43,105 @@ export default function Index() {
   const [searchType, setSearchType] = useState('');
   const [customPropertyType, setCustomPropertyType] = useState('');
 
-  const handleLocationSelect = (coords: { lat: number; lng: number }, address?: string) => {
-    // Set the address in the search field
-    if (address) {
-      setSearchLocation(address);
-    } else {
-      setSearchLocation('Current Location');
+  // ── OLX-style locality autocomplete ────────────────────────────────────────
+  interface LocalitySuggestion { id: string; name: string; secondary: string; }
+  const [localitySuggestions, setLocalitySuggestions] = useState<LocalitySuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestionLoading, setSuggestionLoading] = useState(false);
+  const [activeIdx, setActiveIdx] = useState(-1);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (
+        dropdownRef.current && !dropdownRef.current.contains(e.target as Node) &&
+        inputRef.current && !inputRef.current.contains(e.target as Node)
+      ) setShowSuggestions(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  /**
+   * Fetch neighbourhood/sublocality suggestions from Nominatim.
+   * Extracts: neighbourhood → suburb → quarter → city_district
+   * (equivalent to Google's neighborhood / sublocality_level_1 / sublocality_level_2)
+   */
+  const fetchLocalitySuggestions = useCallback(async (query: string) => {
+    if (query.length < 2) { setLocalitySuggestions([]); setShowSuggestions(false); return; }
+    setSuggestionLoading(true);
+    try {
+      const url =
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}` +
+        `&countrycodes=in&addressdetails=1&limit=7&accept-language=en`;
+      const res = await fetch(url);
+      const data: any[] = await res.json();
+
+      const seen = new Set<string>();
+      const mapped: LocalitySuggestion[] = [];
+
+      for (const item of data) {
+        const a = item.address ?? {};
+        // Sublocality priority — mirrors Google's neighborhood/sublocality_level_1/2
+        const name =
+          a.neighbourhood ||
+          a.suburb ||
+          a.quarter ||
+          a.city_district ||
+          a.village ||
+          a.hamlet ||
+          a.locality ||
+          item.display_name.split(',')[0];
+
+        const secondary = [
+          a.city || a.town || a.municipality,
+          a.state
+        ].filter(Boolean).join(', ');
+
+        const key = `${name}|${secondary}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          mapped.push({ id: String(item.place_id), name, secondary });
+        }
+      }
+
+      setLocalitySuggestions(mapped);
+      setShowSuggestions(mapped.length > 0);
+    } catch {
+      setLocalitySuggestions([]);
+    } finally {
+      setSuggestionLoading(false);
     }
-    console.log('Location selected:', coords, 'Address:', address);
+  }, []);
+
+  const handleSearchInput = (val: string) => {
+    setSearchLocation(val);
+    setActiveIdx(-1);
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => fetchLocalitySuggestions(val), 300);
+  };
+
+  const pickSuggestion = (s: LocalitySuggestion) => {
+    setSearchLocation(s.name);
+    setLocalitySuggestions([]);
+    setShowSuggestions(false);
+    setActiveIdx(-1);
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions || localitySuggestions.length === 0) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIdx(i => Math.min(i + 1, localitySuggestions.length - 1)); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIdx(i => Math.max(i - 1, -1)); }
+    else if (e.key === 'Enter' && activeIdx >= 0) { e.preventDefault(); pickSuggestion(localitySuggestions[activeIdx]); }
+    else if (e.key === 'Escape') setShowSuggestions(false);
+  };
+
+  const handleLocationSelect = (coords: { lat: number; lng: number }, address?: string) => {
+    setSearchLocation(address || 'Current Location');
+    setShowSuggestions(false);
   };
 
   const handleOthersSubmit = (data: { propertyType: string; description: string }) => {
@@ -150,24 +241,71 @@ export default function Index() {
                     </SelectContent>
                   </Select>
                 </div>
+                {/* OLX-style locality search with autocomplete */}
                 <div className="flex-1 relative">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                  <div className="flex items-center w-full h-12 bg-muted/50 rounded-xl border border-transparent focus-within:border-primary/30 focus-within:ring-2 focus-within:ring-primary/20 transition-all px-3 gap-2">
+                    {/* GPS dot button */}
                     <LocationModal onLocationSelect={handleLocationSelect}>
-                      <button className="p-1 hover:bg-muted rounded-full transition-colors" title="Use my location">
-                        <div className="w-5 h-5 rounded-full border-2 border-primary flex items-center justify-center">
-                          <div className="w-2 h-2 bg-primary rounded-full" />
-                        </div>
+                      <button
+                        type="button"
+                        title="Detect my location"
+                        className="flex-shrink-0 w-7 h-7 rounded-full border-2 border-primary flex items-center justify-center hover:bg-primary/10 transition-colors"
+                      >
+                        <div className="w-2.5 h-2.5 bg-primary rounded-full" />
                       </button>
                     </LocationModal>
-                    <div className="w-px h-6 bg-border mx-1" />
+                    <div className="w-px h-5 bg-border flex-shrink-0" />
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      placeholder={t('searchPlaceholder')}
+                      className="flex-1 bg-transparent text-foreground placeholder:text-muted-foreground text-sm focus:outline-none"
+                      value={searchLocation}
+                      onChange={(e) => handleSearchInput(e.target.value)}
+                      onKeyDown={handleSearchKeyDown}
+                      onFocus={() => { if (localitySuggestions.length > 0) setShowSuggestions(true); }}
+                      autoComplete="off"
+                    />
+                    {suggestionLoading && <Loader2 className="w-4 h-4 text-muted-foreground animate-spin flex-shrink-0" />}
+                    {!suggestionLoading && searchLocation && (
+                      <button type="button" onClick={() => { setSearchLocation(''); setLocalitySuggestions([]); setShowSuggestions(false); inputRef.current?.focus(); }} className="flex-shrink-0 text-muted-foreground hover:text-foreground transition-colors">
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                    {!suggestionLoading && !searchLocation && <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
                   </div>
-                  <input
-                    type="text"
-                    placeholder={t('searchPlaceholder')}
-                    className="w-full pl-20 pr-4 py-3 bg-muted/50 rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all border border-transparent focus:border-primary/20"
-                    value={searchLocation}
-                    onChange={(e) => setSearchLocation(e.target.value)}
-                  />
+
+                  {/* Autocomplete dropdown */}
+                  {showSuggestions && localitySuggestions.length > 0 && (
+                    <div
+                      ref={dropdownRef}
+                      className="absolute z-50 top-[calc(100%+6px)] left-0 right-0 bg-card border border-border rounded-xl shadow-xl overflow-hidden"
+                      style={{ animation: 'fadeSlideIn 0.15s ease' }}
+                    >
+                      {localitySuggestions.map((s, idx) => (
+                        <button
+                          key={s.id + idx}
+                          type="button"
+                          onMouseDown={() => pickSuggestion(s)}
+                          className={`w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-muted/60 transition-colors ${idx === activeIdx ? 'bg-muted/60' : ''
+                            }`}
+                        >
+                          <MapPin className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-foreground truncate">{s.name}</p>
+                            {s.secondary && <p className="text-xs text-muted-foreground truncate">{s.secondary}</p>}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <style>{`
+                    @keyframes fadeSlideIn {
+                      from { opacity: 0; transform: translateY(-4px); }
+                      to   { opacity: 1; transform: translateY(0); }
+                    }
+                  `}</style>
                 </div>
                 <Link to={`/properties?intent=${activeTab}&locality=${encodeURIComponent(searchLocation)}${searchType && searchType !== 'all' ? `&type=${searchType}` : ''}`}>
                   <Button className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 h-12 w-full sm:w-auto rounded-xl shadow-lg shadow-primary/20">
