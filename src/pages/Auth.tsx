@@ -1,25 +1,27 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { Phone, ArrowRight, Building2, CheckCircle } from 'lucide-react';
+import { Phone, ArrowRight, Building2, Lock, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { login, verifyOtp } = useAuth();
+  const { loginWithPassword, registerWithPassword } = useAuth();
 
-  const [step, setStep] = useState<'phone' | 'otp'>('phone');
+  const [mode, setMode] = useState<'login' | 'register'>('login');
   const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [confirmationResult, setConfirmationResult] = useState<any>(null);
 
   const redirect = searchParams.get('redirect') || '/';
 
-  const handlePhoneSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -28,65 +30,40 @@ export default function Auth() {
       return;
     }
 
-    setIsLoading(true);
-    try {
-      const result = await login(phone);
-      setConfirmationResult(result);
-      setStep('otp');
-    } catch (err: any) {
-      setError(err.message || 'Failed to send OTP. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleOtpChange = (index: number, value: string) => {
-    if (value.length > 1) {
-      value = value.slice(-1);
-    }
-
-    if (!/^\d*$/.test(value)) return;
-
-    const newOtp = [...otp];
-    newOtp[index] = value;
-    setOtp(newOtp);
-
-    // Auto-focus next input
-    if (value && index < 5) {
-      const nextInput = document.getElementById(`otp-${index + 1}`);
-      nextInput?.focus();
-    }
-  };
-
-  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === 'Backspace' && !otp[index] && index > 0) {
-      const prevInput = document.getElementById(`otp-${index - 1}`);
-      prevInput?.focus();
-    }
-  };
-
-  const handleOtpSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setIsLoading(true);
-
-    const otpValue = otp.join('');
-
-    if (otpValue.length !== 6) {
-      setError('Please enter the complete OTP');
-      setIsLoading(false);
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long');
       return;
     }
 
+    if (mode === 'register' && password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    setIsLoading(true);
     try {
-      const success = await verifyOtp(confirmationResult, otpValue);
-      if (success) {
-        navigate(redirect);
+      if (mode === 'login') {
+        const success = await loginWithPassword(phone, password);
+        if (success) {
+          toast.success('Login successful!');
+          navigate(redirect);
+        }
       } else {
-        setError('Invalid OTP. Please check and try again.');
+        const success = await registerWithPassword(phone, password);
+        if (success) {
+          toast.success('Account created successfully!');
+          navigate(redirect);
+        }
       }
     } catch (err: any) {
-      setError(err.message || 'Verification failed.');
+      console.error(err);
+      if (err.message.includes('Invalid login credentials')) {
+        setError('Incorrect mobile number or password.');
+      } else if (err.message.includes('User already registered')) {
+        setError('An account already exists with this mobile number.');
+      } else {
+        setError(err.message || 'Authentication failed. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -107,104 +84,114 @@ export default function Auth() {
             </span>
           </Link>
 
-          {step === 'phone' ? (
-            <>
-              <h1 className="font-display text-3xl font-bold text-foreground mb-2">
-                Welcome Back!
-              </h1>
-              <p className="text-muted-foreground mb-8">
-                Enter your mobile number to login or create an account
-              </p>
+          <h1 className="font-display text-3xl font-bold text-foreground mb-2">
+            {mode === 'login' ? 'Welcome Back!' : 'Create Account'}
+          </h1>
+          <p className="text-muted-foreground mb-8">
+            {mode === 'login'
+              ? 'Login with your mobile number and password'
+              : 'Sign up with your mobile number to get started'}
+          </p>
 
-              <form onSubmit={handlePhoneSubmit} className="space-y-6">
-                <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">
-                    Mobile Number
-                  </label>
-                  <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 text-muted-foreground">
-                      <Phone className="w-5 h-5" />
-                      <span className="text-foreground font-medium">+91</span>
-                    </div>
-                    <Input
-                      type="tel"
-                      placeholder="Enter your mobile number"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                      className="pl-24 h-14 text-lg"
-                      maxLength={10}
-                    />
-                  </div>
-                  {error && <p className="text-sm text-destructive mt-2">{error}</p>}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="text-sm font-medium text-foreground mb-2 block">
+                Mobile Number
+              </label>
+              <div className="relative">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 text-muted-foreground">
+                  <Phone className="w-5 h-5" />
+                  <span className="text-foreground font-medium">+91</span>
                 </div>
+                <Input
+                  type="tel"
+                  placeholder="Enter mobile number"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  className="pl-24 h-14 text-lg rounded-2xl"
+                  maxLength={10}
+                  required
+                />
+              </div>
+            </div>
 
-                <Button
-                  type="submit"
-                  className="w-full h-14 text-lg bg-gradient-hero hover:opacity-90 text-primary-foreground"
-                >
-                  Get OTP
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
-              </form>
-            </>
-          ) : (
-            <>
-              <h1 className="font-display text-3xl font-bold text-foreground mb-2">
-                Verify OTP
-              </h1>
-              <p className="text-muted-foreground mb-2">
-                We've sent a 6-digit OTP to
-              </p>
-              <p className="text-foreground font-semibold mb-8">
-                +91 {phone}
+            <div>
+              <label className="text-sm font-medium text-foreground mb-2 block">
+                Password
+              </label>
+              <div className="relative">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  <Lock className="w-5 h-5" />
+                </div>
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="px-12 h-14 text-lg rounded-2xl"
+                  required
+                />
                 <button
-                  onClick={() => setStep('phone')}
-                  className="text-primary text-sm ml-2 hover:underline"
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
-                  Change
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
-              </p>
+              </div>
+            </div>
 
-              <form onSubmit={handleOtpSubmit} className="space-y-6">
-                <div>
-                  <label className="text-sm font-medium text-foreground mb-3 block">
-                    Enter OTP
-                  </label>
-                  <div className="flex gap-3 justify-center">
-                    {otp.map((digit, index) => (
-                      <Input
-                        key={index}
-                        id={`otp-${index}`}
-                        type="text"
-                        inputMode="numeric"
-                        value={digit}
-                        onChange={(e) => handleOtpChange(index, e.target.value)}
-                        onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                        className="w-14 h-14 text-center text-2xl font-bold"
-                        maxLength={1}
-                      />
-                    ))}
+            {mode === 'register' && (
+              <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                <label className="text-sm font-medium text-foreground mb-2 block">
+                  Confirm Password
+                </label>
+                <div className="relative">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
+                    <CheckCircle className="w-5 h-5" />
                   </div>
-                  {error && <p className="text-sm text-destructive mt-3 text-center">{error}</p>}
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Confirm password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="px-12 h-14 text-lg rounded-2xl"
+                    required
+                  />
                 </div>
+              </div>
+            )}
 
-                <Button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full h-14 text-lg bg-gradient-hero hover:opacity-90 text-primary-foreground"
-                >
-                  {isLoading ? 'Verifying...' : 'Verify & Login'}
-                </Button>
+            {error && (
+              <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl text-sm text-destructive font-medium animate-in zoom-in-95 duration-200">
+                {error}
+              </div>
+            )}
 
-                <p className="text-center text-sm text-muted-foreground">
-                  Didn't receive OTP?{' '}
-                  <button className="text-primary font-medium hover:underline">
-                    Resend OTP
-                  </button>
-                </p>
-              </form>
-            </>
-          )}
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="w-full h-14 text-lg bg-gradient-hero hover:opacity-90 text-primary-foreground rounded-2xl shadow-lg shadow-primary/20"
+            >
+              {isLoading ? 'Processing...' : (mode === 'login' ? 'Login' : 'Sign Up')}
+              {!isLoading && <ArrowRight className="w-5 h-5 ml-2" />}
+            </Button>
+
+            <div className="text-center pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setMode(mode === 'login' ? 'register' : 'login');
+                  setError('');
+                }}
+                className="text-primary font-semibold hover:underline"
+              >
+                {mode === 'login'
+                  ? "Don't have an account? Create one"
+                  : "Already have an account? Login"}
+              </button>
+            </div>
+          </form>
 
           <p className="text-center text-xs text-muted-foreground mt-8">
             By continuing, you agree to our{' '}
