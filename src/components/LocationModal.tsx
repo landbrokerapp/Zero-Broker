@@ -6,7 +6,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 
 interface LocationModalProps {
     children: React.ReactNode;
-    onLocationSelect: (coords: { lat: number; lng: number }, address?: string) => void;
+    onLocationSelect: (coords: { lat: number; lng: number }, address?: string, city?: string) => void;
 }
 
 export function LocationModal({ children, onLocationSelect }: LocationModalProps) {
@@ -14,7 +14,7 @@ export function LocationModal({ children, onLocationSelect }: LocationModalProps
     const [loading, setLoading] = useState(false);
     const { t } = useLanguage();
 
-    const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
+    const reverseGeocode = async (lat: number, lng: number): Promise<{ sublocality: string; city: string }> => {
         try {
             const response = await fetch(
                 `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1&zoom=18`,
@@ -38,24 +38,26 @@ export function LocationModal({ children, onLocationSelect }: LocationModalProps
             //   locality       → fallback sublocality
             //   city/town      → last resort (city-level, not sub)
 
+            const city = a.city || a.town || a.municipality || '';
             const sublocality =
-                a.neighbourhood ||   // ← Google: neighborhood / sublocality_level_1
-                a.suburb ||   // ← Google: sublocality_level_1 / sublocality_level_2
-                a.quarter ||   // ← Google: sublocality_level_2
-                a.city_district ||   // ← Google: sublocality_level_1 (some cities)
-                a.village ||   // rural neighbourhood equivalent
-                a.hamlet ||   // very small rural area
-                a.locality ||   // generic locality fallback
-                a.city ||   // city-level fallback
-                a.town ||
-                a.municipality ||
+                a.neighbourhood ||
+                a.suburb ||
+                a.quarter ||
+                a.city_district ||
+                a.village ||
+                a.hamlet ||
+                a.locality ||
+                city ||
                 '';
 
-            return sublocality || data.display_name?.split(',')[0] || 'Current Location';
+            return {
+                sublocality: sublocality || data.display_name?.split(',')[0] || 'Current Location',
+                city: city || 'Coimbatore'
+            };
 
         } catch (error) {
             console.error('Reverse geocoding error:', error);
-            return 'Current Location';
+            return { sublocality: 'Current Location', city: 'Coimbatore' };
         }
     };
 
@@ -66,11 +68,11 @@ export function LocationModal({ children, onLocationSelect }: LocationModalProps
                 async (position) => {
                     const { latitude, longitude } = position.coords;
 
-                    // Get readable address from coordinates
-                    const address = await reverseGeocode(latitude, longitude);
+                    // Get readable address and city from coordinates
+                    const { sublocality, city } = await reverseGeocode(latitude, longitude);
 
                     setLoading(false);
-                    onLocationSelect({ lat: latitude, lng: longitude }, address);
+                    onLocationSelect({ lat: latitude, lng: longitude }, sublocality, city);
                     setOpen(false);
                 },
                 (error) => {

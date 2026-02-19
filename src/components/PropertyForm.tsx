@@ -40,6 +40,7 @@ const formSchema = z.object({
     pincode: z.string().optional(),
     mapLocation: z.string().optional(), // Google Maps link or coordinates
     price: z.string().min(1, 'Price is required'),
+    priceUnit: z.enum(['total', 'sqft', 'month']).default('total'),
     priceNegotiable: z.boolean().default(false),
     maintenanceCharges: z.string().optional(),
     securityDeposit: z.string().optional(),
@@ -111,6 +112,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
     const watchPurpose = watch('purpose');
     const watchType = watch('type');
     const watchCity = watch('city');
+    const watchPriceUnit = watch('priceUnit');
 
     const availableLocalities = useMemo(() => {
         if (!watchCity) return [];
@@ -131,7 +133,14 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
         if (watchPurpose === 'PG') {
             setValue('type', '');
         }
-    }, [watchPurpose, setValue]);
+
+        // Update price unit based on purpose
+        if (watchPurpose === 'Rent' || watchPurpose === 'PG') {
+            setValue('priceUnit', 'month');
+        } else if (watchPriceUnit === 'month') {
+            setValue('priceUnit', 'total');
+        }
+    }, [watchPurpose, watchPriceUnit, setValue]);
 
     const handleNumericChange = (e: React.ChangeEvent<HTMLInputElement>, onChange: (value: string) => void) => {
         const value = e.target.value.replace(/[^0-9]/g, '');
@@ -594,18 +603,59 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                             <div className="space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <Label>
-                                            {watchPurpose === 'Sale' ? 'Total Price *' : 'Monthly Rent *'}
-                                        </Label>
+                                        <div className="flex items-center justify-between">
+                                            <Label>
+                                                {watchPurpose === 'Sale'
+                                                    ? (watchPriceUnit === 'sqft' ? 'Price per Sq.ft *' : 'Total Price *')
+                                                    : 'Monthly Rent *'}
+                                            </Label>
+                                            {watchPurpose === 'Sale' && (
+                                                <Controller
+                                                    name="priceUnit"
+                                                    control={control}
+                                                    render={({ field }) => (
+                                                        <div className="flex gap-1 bg-muted/40 p-1 rounded-xl scale-90 origin-right">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => field.onChange('total')}
+                                                                className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${field.value === 'total' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
+                                                            >
+                                                                Total Price
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => field.onChange('sqft')}
+                                                                className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${field.value === 'sqft' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
+                                                            >
+                                                                Per Sq.ft
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                />
+                                            )}
+                                        </div>
                                         <div className="relative">
                                             <IndianRupee className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
                                             <Controller
                                                 name="price"
                                                 control={control}
                                                 render={({ field }) => (
-                                                    <Input {...field} type="text" inputMode="numeric" pattern="[0-9]*" onChange={(e) => handleNumericChange(e, field.onChange)} placeholder="0.00" className="h-14 pl-12 text-xl font-bold rounded-2xl" />
+                                                    <Input
+                                                        {...field}
+                                                        type="text"
+                                                        inputMode="numeric"
+                                                        pattern="[0-9]*"
+                                                        onChange={(e) => handleNumericChange(e, field.onChange)}
+                                                        placeholder={watchPriceUnit === 'sqft' ? "e.g. 4500" : "0.00"}
+                                                        className={`h-14 pl-12 text-xl font-bold rounded-2xl ${watchPriceUnit === 'sqft' ? 'pr-20' : ''}`}
+                                                    />
                                                 )}
                                             />
+                                            {watchPriceUnit === 'sqft' && (
+                                                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold text-sm">
+                                                    / sqft
+                                                </div>
+                                            )}
                                         </div>
                                         {errors.price && <p className="text-destructive text-sm font-medium">{errors.price.message}</p>}
                                     </div>

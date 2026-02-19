@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/sheet';
 import { mockProperties, localities, propertyTypes, budgetRanges, Property } from '@/data/mockProperties';
 import { useProperties } from '@/contexts/PropertyContext';
+import { getAllCityNames } from '@/data/tamilNaduLocations';
 
 export default function Properties() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -86,7 +87,7 @@ export default function Properties() {
             <SelectValue placeholder="Select city" />
           </SelectTrigger>
           <SelectContent className="bg-card">
-            {['Coimbatore', 'Chennai', 'Madurai', 'Trichy', 'Salem'].map((c) => (
+            {getAllCityNames().map((c) => (
               <SelectItem key={c} value={c}>
                 {c}
               </SelectItem>

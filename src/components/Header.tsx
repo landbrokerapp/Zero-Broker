@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useFavorites } from '@/contexts/FavoritesContext';
+import { useLocationContext } from '@/contexts/LocationContext';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -19,6 +20,7 @@ export function Header() {
     const { user, isAuthenticated, logout } = useAuth();
     const { language, setLanguage, t } = useLanguage();
     const { favorites } = useFavorites();
+    const { city, sublocality } = useLocationContext();
     const location = useLocation();
 
     const navLinks = [
@@ -61,10 +63,11 @@ export function Header() {
 
                     {/* Right Actions */}
                     <div className="flex items-center gap-2 md:gap-3">
-                        {/* Location Badge */}
                         <div className="hidden lg:flex items-center gap-2 px-4 py-2 bg-muted/50 rounded-full border border-border">
                             <MapPin className="w-4 h-4 text-primary" />
-                            <span className="text-sm font-medium text-foreground">Coimbatore</span>
+                            <span className="text-sm font-medium text-foreground">
+                                {sublocality ? `${sublocality}, ${city}` : city}
+                            </span>
                         </div>
 
                         <div className="w-px h-6 bg-border mx-2 hidden lg:block" />

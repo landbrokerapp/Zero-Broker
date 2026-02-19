@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { FavoritesProvider } from "@/contexts/FavoritesContext";
 import { PropertyProvider } from "@/contexts/PropertyContext";
+import { LocationProvider } from "@/contexts/LocationContext";
 import Index from "./pages/Index";
 import Properties from "./pages/Properties";
 import PropertyDetail from "./pages/PropertyDetail";
@@ -34,40 +35,42 @@ const App = () => (
       <ScrollToTop />
       <AuthProvider>
         <LanguageProvider>
-          <FavoritesProvider>
-            <PropertyProvider>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <Routes>
-                  {/* Public Routes */}
-                  <Route path="/" element={<Index />} />
-                  <Route path="/properties" element={<Properties />} />
-                  <Route path="/property/:id" element={<PropertyDetail />} />
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/post-property" element={<PostProperty />} />
-                  <Route path="/edit-property/:id" element={<EditProperty />} />
-                  <Route path="/my-properties" element={<MyProperties />} />
-                  <Route path="/favorites" element={<Favorites />} />
+          <LocationProvider>
+            <FavoritesProvider>
+              <PropertyProvider>
+                <TooltipProvider>
+                  <Toaster />
+                  <Sonner />
+                  <Routes>
+                    {/* Public Routes */}
+                    <Route path="/" element={<Index />} />
+                    <Route path="/properties" element={<Properties />} />
+                    <Route path="/property/:id" element={<PropertyDetail />} />
+                    <Route path="/auth" element={<Auth />} />
+                    <Route path="/post-property" element={<PostProperty />} />
+                    <Route path="/edit-property/:id" element={<EditProperty />} />
+                    <Route path="/my-properties" element={<MyProperties />} />
+                    <Route path="/favorites" element={<Favorites />} />
 
-                  {/* Admin Routes */}
-                  <Route path="/admin/login" element={<AdminLogin />} />
+                    {/* Admin Routes */}
+                    <Route path="/admin/login" element={<AdminLogin />} />
 
-                  <Route element={<ProtectedRoute />}>
-                    <Route path="/admin" element={<AdminLayout />}>
-                      <Route index element={<AdminDashboard />} />
-                      <Route path="properties" element={<AdminProperties />} />
-                      <Route path="users" element={<AdminUsers />} />
-                      <Route path="post-property" element={<AdminPostProperty />} />
-                      <Route path="settings" element={<AdminSettings />} />
+                    <Route element={<ProtectedRoute />}>
+                      <Route path="/admin" element={<AdminLayout />}>
+                        <Route index element={<AdminDashboard />} />
+                        <Route path="properties" element={<AdminProperties />} />
+                        <Route path="users" element={<AdminUsers />} />
+                        <Route path="post-property" element={<AdminPostProperty />} />
+                        <Route path="settings" element={<AdminSettings />} />
+                      </Route>
                     </Route>
-                  </Route>
 
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </TooltipProvider>
-            </PropertyProvider>
-          </FavoritesProvider>
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </TooltipProvider>
+              </PropertyProvider>
+            </FavoritesProvider>
+          </LocationProvider>
         </LanguageProvider>
       </AuthProvider>
     </BrowserRouter>

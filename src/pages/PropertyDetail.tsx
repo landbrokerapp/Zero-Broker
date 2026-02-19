@@ -50,6 +50,9 @@ export default function PropertyDetail() {
 
   const formatPrice = (price: number, unit: string, intent: string) => {
     if (intent === 'buy') {
+      if (unit === 'sqft') {
+        return `₹${price.toLocaleString('en-IN')}/sqft`;
+      }
       if (price >= 10000000) {
         return `₹${(price / 10000000).toFixed(2)} Cr`;
       } else if (price >= 100000) {

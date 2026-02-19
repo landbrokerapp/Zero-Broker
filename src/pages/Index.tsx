@@ -21,7 +21,9 @@ import {
 import { mockProperties, mockSellers, propertyTypes } from '@/data/mockProperties';
 import { pgTypes } from '@/data/pgTypes';
 import { useProperties } from '@/contexts/PropertyContext';
+import { useLocationContext } from '@/contexts/LocationContext';
 import { Property } from '@/data/mockProperties';
+import { getLocalitiesForCity, tamilNaduCitiesDetailed } from '@/data/tamilNaduLocations';
 
 const propertyCategories = [
   { icon: Building2, label: 'Apartment' },
@@ -35,6 +37,7 @@ const propertyCategories = [
 
 export default function Index() {
   const { properties } = useProperties();
+  const { city: globalCity, updateLocation } = useLocationContext();
 
   const featuredProperties = properties.filter(p => p.verified).slice(0, 6);
   const { t } = useLanguage();
@@ -127,6 +130,10 @@ export default function Index() {
 
   const pickSuggestion = (s: LocalitySuggestion) => {
     setSearchLocation(s.name);
+    // Attempt to update global location if city is found in secondary
+    const cityMatch = s.secondary.split(',')[0].trim();
+    updateLocation(cityMatch, s.name);
+
     setLocalitySuggestions([]);
     setShowSuggestions(false);
     setActiveIdx(-1);
@@ -140,9 +147,13 @@ export default function Index() {
     else if (e.key === 'Escape') setShowSuggestions(false);
   };
 
-  const handleLocationSelect = (coords: { lat: number; lng: number }, address?: string) => {
+  const handleLocationSelect = (coords: { lat: number; lng: number }, address?: string, city?: string) => {
     setSearchLocation(address || 'Current Location');
     setShowSuggestions(false);
+
+    if (city && address) {
+      updateLocation(city, address);
+    }
   };
 
   const handleOthersSubmit = (data: { propertyType: string; description: string }) => {

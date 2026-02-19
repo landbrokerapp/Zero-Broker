@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { MessageCircle, X, Send, Sparkles, Upload, CheckCircle, MapPin, Building2, Home, Building, TreePine, Warehouse, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
-import { tamilNaduCities, budgetRanges } from '@/data/mockProperties';
+import { budgetRanges } from '@/data/mockProperties';
+import { tamilNaduCitiesDetailed as tamilNaduCities } from '@/data/tamilNaduLocations';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProperties } from '@/contexts/PropertyContext';
 import { Property } from '@/data/mockProperties';
@@ -89,12 +90,12 @@ function LocalityPicker({ city, onSelect }: { city: string; onSelect: (loc: stri
     <div className="mt-3 flex flex-wrap gap-2">
       {localities.map(loc => (
         <button
-          key={loc}
-          onClick={() => onSelect(loc)}
+          key={loc.name}
+          onClick={() => onSelect(loc.name)}
           className="flex items-center gap-1.5 px-3 py-1.5 bg-card border border-border rounded-full text-xs font-medium text-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-all"
         >
           <MapPin className="w-3 h-3 flex-shrink-0" />
-          {loc}
+          {loc.name}
         </button>
       ))}
     </div>
