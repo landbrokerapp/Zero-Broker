@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, MessageCircle, MapPin, ArrowRight, Building2, Home, Building, Warehouse, TreePine, Users, CheckCircle2, CalendarCheck, Handshake, Navigation, Loader2, X } from 'lucide-react';
+import { Search, MessageCircle, MapPin, ArrowRight, Building2, Home, Building, Warehouse, TreePine, Users, CheckCircle2, CalendarCheck, Handshake, Navigation, Loader2, X, IndianRupee } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
@@ -29,6 +29,7 @@ const propertyCategories = [
   { icon: Building, label: 'Villa' },
   { icon: TreePine, label: 'Plot/Land' },
   { icon: Warehouse, label: 'Commercial' },
+  { icon: IndianRupee, label: 'Income Property' },
   { icon: Users, label: 'PG / Hostels' },
 ];
 
@@ -420,7 +421,7 @@ export default function Index() {
               </p>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
               {propertyCategories.map((category) => (
                 <Link
                   key={category.label}

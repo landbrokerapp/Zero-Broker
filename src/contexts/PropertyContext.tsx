@@ -20,7 +20,9 @@ interface PropertyContextType {
   filters: PropertyFilters;
   setFilters: (filters: PropertyFilters) => void;
   filteredProperties: Property[];
-  addProperty: (property: Omit<Property, 'id' | 'postedDate' | 'verified'>, verified?: boolean) => Promise<void>;
+  addProperty: (property: Omit<Property, 'id' | 'postedDate' | 'verified' | 'status'>, verified?: boolean) => Promise<void>;
+  updateProperty: (id: string, property: Partial<Property>) => Promise<void>;
+  archiveProperty: (id: string, status: 'active' | 'archived') => Promise<void>;
   verifyProperty: (id: string, status?: boolean) => Promise<void>;
   deleteProperty: (id: string) => Promise<void>;
   setProperties: React.Dispatch<React.SetStateAction<Property[]>>;
@@ -86,6 +88,7 @@ export function PropertyProvider({ children }: { children: ReactNode }) {
             images: item.images,
             videoUrl: item.video_url,
             verified: item.verified,
+            status: item.status || 'active',
             postedDate: item.posted_date,
             description: item.description,
             sellerId: item.seller_id,
@@ -115,18 +118,42 @@ export function PropertyProvider({ children }: { children: ReactNode }) {
 
   const filteredProperties = properties.filter((property) => {
     if (!property.verified) return false;
+
+    // Intent Filter
     if (filters.intent && property.intent !== filters.intent) return false;
-    if (filters.city && property.city !== filters.city) return false;
-    if (filters.locality && property.locality !== filters.locality) return false;
-    if (filters.type && property.type !== filters.type) return false;
+
+    // Improved Location Search (City or Locality, Case-Insensitive)
+    if (filters.city) {
+      const searchCity = filters.city.toLowerCase();
+      if (property.city.toLowerCase() !== searchCity) return false;
+    }
+
+    if (filters.locality) {
+      const searchLoc = filters.locality.toLowerCase().trim();
+      // If the user searched for something, check if it matches locality OR city
+      // This handles cases where people type a city name in the location search
+      const matchesLocality = property.locality.toLowerCase().includes(searchLoc);
+      const matchesCity = property.city.toLowerCase().includes(searchLoc);
+
+      if (!matchesLocality && !matchesCity) return false;
+    }
+
+    // Other Filters (Case-Insensitive where applicable)
+    if (filters.type && property.type.toLowerCase() !== filters.type.toLowerCase()) return false;
     if (filters.bhk && property.bhk !== filters.bhk) return false;
-    if (filters.furnishing && property.furnishing !== filters.furnishing) return false;
+    if (filters.furnishing && property.furnishing.toLowerCase() !== filters.furnishing.toLowerCase()) return false;
+
+    // Budget Filters
     if (filters.budgetMin && property.price < filters.budgetMin) return false;
     if (filters.budgetMax && property.price > filters.budgetMax) return false;
+
+    // Status Filter (Don't show archived properties in main list)
+    if (property.status === 'archived') return false;
+
     return true;
   });
 
-  const addProperty = async (propertyData: Omit<Property, 'id' | 'postedDate' | 'verified'>, verified = false) => {
+  const addProperty = async (propertyData: Omit<Property, 'id' | 'postedDate' | 'verified' | 'status'>, verified = false) => {
     const newId = `prop_${Date.now()}`;
     const postedDate = new Date().toISOString().split('T')[0];
 
@@ -164,6 +191,7 @@ export function PropertyProvider({ children }: { children: ReactNode }) {
       images: propertyData.images,
       video_url: propertyData.videoUrl,
       verified: verified,
+      status: 'active',
       posted_date: postedDate,
       description: propertyData.description,
       seller_id: propertyData.sellerId,
@@ -191,6 +219,7 @@ export function PropertyProvider({ children }: { children: ReactNode }) {
         id: newId,
         postedDate: postedDate,
         verified: verified,
+        status: 'active',
       };
 
       setProperties((prev) => [stateProperty, ...prev]);
@@ -242,6 +271,56 @@ export function PropertyProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateProperty = async (id: string, propertyData: Partial<Property>) => {
+    try {
+      // If a seller edits their property, it must be re-verified by admin
+      const updates: any = {};
+      if (propertyData.title) updates.title = propertyData.title;
+      if (propertyData.price) updates.price = propertyData.price;
+      if (propertyData.description) updates.description = propertyData.description;
+      if (propertyData.images) updates.images = propertyData.images;
+      if (propertyData.locality) updates.locality = propertyData.locality;
+      if (propertyData.city) updates.city = propertyData.city;
+
+      // Reset verified status on edit
+      updates.verified = false;
+
+      const { error } = await supabase
+        .from('properties')
+        .update(updates)
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setProperties((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, ...propertyData, verified: false } : p))
+      );
+      toast.success('Property updated and sent for re-verification');
+    } catch (err) {
+      console.error('Error updating property:', err);
+      throw err;
+    }
+  };
+
+  const archiveProperty = async (id: string, status: 'active' | 'archived') => {
+    try {
+      const { error } = await supabase
+        .from('properties')
+        .update({ status })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setProperties((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, status } : p))
+      );
+      toast.success(`Property ${status === 'archived' ? 'archived' : 'restored'} successfully`);
+    } catch (err) {
+      console.error('Error archiving property:', err);
+      throw err;
+    }
+  };
+
   const userProperties = properties.filter((p) => userPropertyIds.includes(p.id));
 
   return (
@@ -253,6 +332,8 @@ export function PropertyProvider({ children }: { children: ReactNode }) {
         setFilters,
         filteredProperties,
         addProperty,
+        updateProperty,
+        archiveProperty,
         verifyProperty,
         deleteProperty,
         setProperties,

@@ -13,6 +13,7 @@ import PropertyDetail from "./pages/PropertyDetail";
 import Auth from "./pages/Auth";
 import PostProperty from "./pages/PostProperty";
 import MyProperties from "./pages/MyProperties";
+import EditProperty from "./pages/EditProperty";
 import Favorites from "./pages/Favorites";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/admin/AdminLogin";
@@ -45,6 +46,7 @@ const App = () => (
                   <Route path="/property/:id" element={<PropertyDetail />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/post-property" element={<PostProperty />} />
+                  <Route path="/edit-property/:id" element={<EditProperty />} />
                   <Route path="/my-properties" element={<MyProperties />} />
                   <Route path="/favorites" element={<Favorites />} />
 

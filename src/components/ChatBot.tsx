@@ -191,7 +191,7 @@ export function ChatBot() {
       const purpose = input as 'Sale' | 'Rent' | 'PG';
       const options = purpose === 'PG'
         ? ['PG for Men', 'PG for Women', 'PG for Coliving']
-        : ['Apartment / Flat', 'Independent House', 'Villa', 'Plot / Land', 'Commercial Office', 'Shop / Showroom'];
+        : ['Apartment / Flat', 'Independent House', 'Villa', 'Plot / Land', 'Commercial Office', 'Shop / Showroom', 'Income Property'];
       setChatState(prev => ({ ...prev, postPurpose: purpose, step: 202 }));
       addMessage(`Okay, for ${purpose}. What type of property is it?`, 'bot', options);
       return;
@@ -217,7 +217,7 @@ export function ChatBot() {
       if (type.includes('Plot') || type.includes('Land')) {
         setChatState(prev => ({ ...prev, postLocality: loc, step: 301 }));
         addMessage("What is the total Plot Area? (e.g., 1200 sqft, 5 cents)", 'bot');
-      } else if (type.includes('Commercial') || type.includes('Shop')) {
+      } else if (type.includes('Commercial') || type.includes('Shop') || type.includes('Income')) {
         setChatState(prev => ({ ...prev, postLocality: loc, step: 310 }));
         addMessage("What is the Built-up Area? (sqft)", 'bot');
       } else if (chatState.postPurpose === 'PG') {
@@ -354,7 +354,8 @@ export function ChatBot() {
               : postType?.toLowerCase().includes('villa') ? 'villa'
                 : postType?.toLowerCase().includes('plot') ? 'plot'
                   : postType?.toLowerCase().includes('commercial') ? 'commercial'
-                    : 'apartment') as Property['type'],
+                    : postType?.toLowerCase().includes('income') ? 'income'
+                      : 'apartment') as Property['type'],
         intent: intentMap[postPurpose!] || 'buy',
         purpose: postPurpose,
         price: parseInt(postPrice?.replace(/[^\d]/g, '') || '0') || 0,
@@ -380,6 +381,7 @@ export function ChatBot() {
             : 'unfurnished') as Property['furnishing'],
         amenities: [],
         images: imageUrls,
+        status: 'active',
         description: `Posted via ChatBot. ${postType} in ${postLocality}, ${postCity}.`,
         sellerId: user?.id || 'anonymous',
         sellerName: user?.name || 'User',
@@ -457,7 +459,7 @@ export function ChatBot() {
     const isPG = intent === 'pg';
     const typeOptions = isPG
       ? ['PG for Men', 'PG for Women', 'PG for Coliving']
-      : ['🏢 Apartment / Flat', '🏠 Independent House', '🏡 Villa', '🌳 Plot / Land', '🏬 Commercial'];
+      : ['🏢 Apartment / Flat', '🏠 Independent House', '🏡 Villa', '🌳 Plot / Land', '🏬 Commercial', '💰 Income Property'];
     addMessage("What type of property are you looking for?", 'bot', typeOptions);
   };
 
@@ -499,7 +501,7 @@ export function ChatBot() {
     if (step === 5) {
       setChatState(prev => ({ ...prev, searchBudget: input, step: 6 }));
       const type = chatState.searchType || '';
-      if (type.includes('Plot') || type.includes('Commercial')) {
+      if (type.includes('Plot') || type.includes('Commercial') || type.includes('Income')) {
         finishSearch(input);
         return;
       }

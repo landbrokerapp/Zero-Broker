@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Building, ArrowLeft, Clock, CheckCircle } from 'lucide-react';
+import { Building, ArrowLeft, Clock, CheckCircle, Edit2, Archive, Trash2, Eye, EyeOff } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { PropertyCard } from '@/components/PropertyCard';
@@ -11,7 +11,7 @@ import { useProperties } from '@/contexts/PropertyContext';
 
 export default function MyProperties() {
   const { isAuthenticated } = useAuth();
-  const { userProperties } = useProperties();
+  const { userProperties, archiveProperty, deleteProperty } = useProperties();
 
   if (!isAuthenticated) {
     return (
@@ -69,22 +69,64 @@ export default function MyProperties() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {userProperties.map((property) => (
-                <div key={property.id} className="relative">
+                <div key={property.id} className="group relative flex flex-col">
                   <PropertyCard property={property} />
-                  <div className="absolute top-4 right-4">
-                    <Badge 
-                      variant="secondary" 
-                      className={property.verified 
-                        ? 'bg-accent/10 text-accent border-accent' 
-                        : 'bg-warning/10 text-warning border-warning'
+
+                  {/* Status Overlay Badge */}
+                  <div className="absolute top-4 right-4 z-10">
+                    <Badge
+                      variant="secondary"
+                      className={property.status === 'archived'
+                        ? 'bg-neutral-500/10 text-neutral-500 border-neutral-500'
+                        : property.verified
+                          ? 'bg-accent/10 text-accent border-accent'
+                          : 'bg-warning/10 text-warning border-warning'
                       }
                     >
-                      {property.verified ? (
+                      {property.status === 'archived' ? (
+                        <><EyeOff className="w-3 h-3 mr-1" /> Archived</>
+                      ) : property.verified ? (
                         <><CheckCircle className="w-3 h-3 mr-1" /> Approved</>
                       ) : (
                         <><Clock className="w-3 h-3 mr-1" /> Pending</>
                       )}
                     </Badge>
+                  </div>
+
+                  {/* Actions Overlay */}
+                  <div className="mt-4 flex items-center justify-between gap-2 p-1 bg-muted/50 rounded-xl border border-border/50">
+                    <Link to={`/edit-property/${property.id}`} className="flex-1">
+                      <Button variant="ghost" size="sm" className="w-full h-9 gap-2 hover:bg-white dark:hover:bg-neutral-800">
+                        <Edit2 className="w-4 h-4 text-blue-500" />
+                        <span className="text-xs font-medium">Edit</span>
+                      </Button>
+                    </Link>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => archiveProperty(property.id, property.status === 'archived' ? 'active' : 'archived')}
+                      className="flex-1 h-9 gap-2 hover:bg-white dark:hover:bg-neutral-800"
+                    >
+                      {property.status === 'archived' ? (
+                        <><Eye className="w-4 h-4 text-green-500" /><span className="text-xs font-medium">Restore</span></>
+                      ) : (
+                        <><Archive className="w-4 h-4 text-amber-500" /><span className="text-xs font-medium">Archive</span></>
+                      )}
+                    </Button>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        if (confirm('Are you sure you want to delete this listing permanently?')) {
+                          deleteProperty(property.id);
+                        }
+                      }}
+                      className="h-9 w-9 p-0 hover:bg-destructive/10 text-destructive"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
               ))}

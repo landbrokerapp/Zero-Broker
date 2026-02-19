@@ -5,7 +5,7 @@ export interface Property {
     lng: number;
   };
   title: string;
-  type: 'apartment' | 'house' | 'villa' | 'plot' | 'pg' | 'commercial' | 'shop';
+  type: 'apartment' | 'house' | 'villa' | 'plot' | 'pg' | 'commercial' | 'shop' | 'income';
   intent: 'buy' | 'rent' | 'pg';
   purpose?: 'Sale' | 'Rent' | 'PG';
   price: number;
@@ -52,6 +52,7 @@ export interface Property {
   images: string[];
   videoUrl?: string;
   verified: boolean;
+  status: 'active' | 'archived';
   postedDate: string;
   description: string;
   sellerId: string;
@@ -95,6 +96,7 @@ export const propertyTypes = [
   { value: 'plot', label: 'Plot / Land' },
   { value: 'commercial', label: 'Commercial Office' },
   { value: 'shop', label: 'Shop / Showroom' },
+  { value: 'income', label: 'Income Property' },
 ];
 
 export const budgetRanges = {

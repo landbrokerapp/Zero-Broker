@@ -61,6 +61,7 @@ export default function PostProperty() {
         propertyAge: formData.propertyAge as Property['propertyAge'],
         amenities: formData.amenities,
         images: formData.images,
+        status: 'active',
         description: formData.description || '',
         sellerId: user?.id || '',
         sellerName: user?.name || 'Property Owner',
