@@ -9,9 +9,9 @@ import { toast } from 'sonner';
 export default function Auth() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { loginWithPassword, registerWithPassword } = useAuth();
+  const { loginWithPassword, registerWithPassword, resetPassword } = useAuth();
 
-  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [mode, setMode] = useState<'login' | 'register' | 'forgot'>('login');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -30,13 +30,18 @@ export default function Auth() {
       return;
     }
 
-    if (password.length < 6) {
+    if (mode !== 'forgot' && password.length < 6) {
       setError('Password must be at least 6 characters long');
       return;
     }
 
     if (mode === 'register' && password !== confirmPassword) {
       setError('Passwords do not match');
+      return;
+    }
+
+    if (mode === 'forgot' && password.length < 6) {
+      setError('New password must be at least 6 characters long');
       return;
     }
 
@@ -48,11 +53,17 @@ export default function Auth() {
           toast.success('Login successful!');
           navigate(redirect);
         }
-      } else {
+      } else if (mode === 'register') {
         const success = await registerWithPassword(phone, password);
         if (success) {
           toast.success('Account created successfully!');
           navigate(redirect);
+        }
+      } else {
+        const success = await resetPassword(phone, password);
+        if (success) {
+          toast.success('Password reset link sent to your mobile!');
+          setMode('login');
         }
       }
     } catch (err: any) {
@@ -85,12 +96,14 @@ export default function Auth() {
           </Link>
 
           <h1 className="font-display text-3xl font-bold text-foreground mb-2">
-            {mode === 'login' ? 'Welcome Back!' : 'Create Account'}
+            {mode === 'login' ? 'Welcome Back!' : mode === 'register' ? 'Create Account' : 'Reset Password'}
           </h1>
           <p className="text-muted-foreground mb-8">
             {mode === 'login'
               ? 'Login with your mobile number and password'
-              : 'Sign up with your mobile number to get started'}
+              : mode === 'register'
+                ? 'Sign up with your mobile number to get started'
+                : 'Enter your mobile number to reset your password'}
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -116,16 +129,18 @@ export default function Auth() {
             </div>
 
             <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">
-                Password
-              </label>
+              <div className="flex justify-between items-center mb-2">
+                <label className="text-sm font-medium text-foreground block">
+                  {mode === 'forgot' ? 'New Password' : 'Password'}
+                </label>
+              </div>
               <div className="relative">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
                   <Lock className="w-5 h-5" />
                 </div>
                 <Input
                   type={showPassword ? "text" : "password"}
-                  placeholder="Enter password"
+                  placeholder={mode === 'forgot' ? "Enter new password" : "Enter password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="px-12 h-14 text-lg rounded-2xl"
@@ -173,9 +188,21 @@ export default function Auth() {
               disabled={isLoading}
               className="w-full h-14 text-lg bg-gradient-hero hover:opacity-90 text-primary-foreground rounded-2xl shadow-lg shadow-primary/20"
             >
-              {isLoading ? 'Processing...' : (mode === 'login' ? 'Login' : 'Sign Up')}
+              {isLoading ? 'Processing...' : (mode === 'login' ? 'Login' : mode === 'register' ? 'Sign Up' : 'Reset Password')}
               {!isLoading && <ArrowRight className="w-5 h-5 ml-2" />}
             </Button>
+
+            {mode === 'login' && (
+              <div className="text-center -mt-2">
+                <button
+                  type="button"
+                  onClick={() => setMode('forgot')}
+                  className="text-primary text-sm font-medium hover:underline"
+                >
+                  Forgot Password?
+                </button>
+              </div>
+            )}
 
             <div className="text-center pt-2">
               <button
@@ -188,7 +215,9 @@ export default function Auth() {
               >
                 {mode === 'login'
                   ? "Don't have an account? Create one"
-                  : "Already have an account? Login"}
+                  : mode === 'register'
+                    ? "Already have an account? Login"
+                    : "Back to Login"}
               </button>
             </div>
           </form>

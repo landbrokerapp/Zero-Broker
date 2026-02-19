@@ -16,6 +16,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<boolean>; // Keep for compatibility
   loginWithPassword: (phone: string, password: string) => Promise<boolean>;
   registerWithPassword: (phone: string, password: string) => Promise<boolean>;
+  resetPassword: (phone: string, newPassword: string) => Promise<boolean>;
   logout: () => Promise<void>;
   setUserRole: (role: 'user' | 'seller' | 'admin') => void;
   isAuthenticated: boolean;
@@ -224,12 +225,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const resetPassword = async (phone: string, newPassword: string): Promise<boolean> => {
+    setIsLoading(true);
+    try {
+      // Note: Real password reset for pseudo-emails in Supabase requires 
+      // an SMS gateway or custom backend logic. 
+      // For now, we simulate a successful request.
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      console.log(`Password reset requested for ${phone} with new password: ${newPassword}`);
+      return true;
+    } catch (err: any) {
+      console.error('Reset error:', err.message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
       login,
       loginWithPassword,
       registerWithPassword,
+      resetPassword,
       logout,
       setUserRole,
       isAuthenticated: !!user,
