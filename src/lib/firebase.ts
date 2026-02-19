@@ -4,13 +4,13 @@ import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth
 // Replace these with your actual Firebase project configuration
 // Firebase Console > Project Settings > General > Your apps
 const firebaseConfig = {
-    apiKey: "AIzaSyDaAeoVhJw8h_Xdwdkf5y0AjBbczGlVthM",
-    authDomain: "zero-487916.firebaseapp.com",
-    projectId: "zero-487916",
-    storageBucket: "zero-487916.firebasestorage.app",
-    messagingSenderId: "873932774483",
-    appId: "1:873932774483:web:cd5830a96be4a25869baa6",
-    measurementId: "G-8B0WRQ7FWC"
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID,
+    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase
