@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { Filter, Grid, List, MapPin, ChevronDown, X } from 'lucide-react';
+import { Filter, ChevronDown, X, MapPin } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { PropertyCard } from '@/components/PropertyCard';
@@ -21,13 +21,11 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { PropertyMap } from '@/components/PropertyMap';
 import { mockProperties, localities, propertyTypes, budgetRanges, Property } from '@/data/mockProperties';
 import { useProperties } from '@/contexts/PropertyContext';
 
 export default function Properties() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'map'>('grid');
   const { properties, filters, setFilters, filteredProperties } = useProperties();
 
   const intent = searchParams.get('intent') as 'buy' | 'rent' | 'pg' | null;
@@ -158,10 +156,10 @@ export default function Properties() {
   );
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Header />
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="flex-1 container mx-auto px-4 py-8">
         {/* Page Header */}
         <div className="mb-8">
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
@@ -236,40 +234,13 @@ export default function Properties() {
                 ))}
               </div>
 
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground hidden sm:block">
-                  {filteredProperties.length} properties
-                </span>
-                <div className="flex items-center border border-border rounded-lg overflow-hidden">
-                  <button
-                    onClick={() => setViewMode('grid')}
-                    className={`p-2 ${viewMode === 'grid' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted'}`}
-                    title="Grid View"
-                  >
-                    <Grid className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setViewMode('list')}
-                    className={`p-2 ${viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted'}`}
-                    title="List View"
-                  >
-                    <List className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setViewMode('map')}
-                    className={`p-2 ${viewMode === 'map' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted'}`}
-                    title="Map View"
-                  >
-                    <MapPin className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
+              <span className="text-sm text-muted-foreground hidden sm:block">
+                {filteredProperties.length} properties
+              </span>
             </div>
 
-            {viewMode === 'map' ? (
-              <PropertyMap properties={filteredProperties} />
-            ) : filteredProperties.length > 0 ? (
-              <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'}`}>
+            {filteredProperties.length > 0 ? (
+              <div className="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
                 {filteredProperties.map((property) => (
                   <PropertyCard key={property.id} property={property} />
                 ))}

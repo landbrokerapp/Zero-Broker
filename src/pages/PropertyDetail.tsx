@@ -93,10 +93,10 @@ export default function PropertyDetail() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Header />
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="flex-1 container mx-auto px-4 py-8">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
           <Link to="/" className="hover:text-primary">Home</Link>

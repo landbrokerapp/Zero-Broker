@@ -23,12 +23,14 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminPostProperty from "./pages/admin/AdminPostProperty";
 import AdminSettings from "./pages/admin/AdminSettings";
 import ProtectedRoute from "./components/admin/ProtectedRoute";
+import ScrollToTop from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
+      <ScrollToTop />
       <AuthProvider>
         <LanguageProvider>
           <FavoritesProvider>
