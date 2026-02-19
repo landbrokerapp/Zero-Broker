@@ -40,7 +40,7 @@ const formSchema = z.object({
     pincode: z.string().optional(),
     mapLocation: z.string().optional(), // Google Maps link or coordinates
     price: z.string().min(1, 'Price is required'),
-    priceUnit: z.enum(['total', 'sqft', 'month']).default('total'),
+    priceUnit: z.enum(['total', 'sqft', 'cents', 'month']).default('total'),
     priceNegotiable: z.boolean().default(false),
     maintenanceCharges: z.string().optional(),
     securityDeposit: z.string().optional(),
@@ -113,6 +113,9 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
     const watchType = watch('type');
     const watchCity = watch('city');
     const watchPriceUnit = watch('priceUnit');
+    const watchPrice = watch('price');
+    const watchBuiltUpArea = watch('builtUpArea');
+    const watchPlotArea = watch('plotArea');
 
     const availableLocalities = useMemo(() => {
         if (!watchCity) return [];
@@ -137,10 +140,17 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
         // Update price unit based on purpose
         if (watchPurpose === 'Rent' || watchPurpose === 'PG') {
             setValue('priceUnit', 'month');
-        } else if (watchPriceUnit === 'month') {
-            setValue('priceUnit', 'total');
+        } else if (watchPriceUnit === 'month' || watchPriceUnit === 'total') {
+            setValue('priceUnit', 'sqft');
         }
     }, [watchPurpose, watchPriceUnit, setValue]);
+
+    const calculateTotalValue = () => {
+        const price = parseFloat(watchPrice) || 0;
+        const areaStr = (watchType?.includes('Plot') || watchType?.includes('Land')) ? watchPlotArea : watchBuiltUpArea;
+        const area = parseFloat(areaStr || '0') || 0;
+        return price * area;
+    };
 
     const handleNumericChange = (e: React.ChangeEvent<HTMLInputElement>, onChange: (value: string) => void) => {
         const value = e.target.value.replace(/[^0-9]/g, '');
@@ -318,9 +328,9 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
             };
 
             await onSubmit(submissionData);
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            toast.error('Failed to submit property');
+            toast.error(error.message || 'Failed to submit property');
         } finally {
             setIsSubmitting(false);
         }
@@ -606,7 +616,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                                         <div className="flex items-center justify-between">
                                             <Label>
                                                 {watchPurpose === 'Sale'
-                                                    ? (watchPriceUnit === 'sqft' ? 'Price per Sq.ft *' : 'Total Price *')
+                                                    ? (watchPriceUnit === 'sqft' ? 'Price per Sq.ft *' : 'Price per Cent *')
                                                     : 'Monthly Rent *'}
                                             </Label>
                                             {watchPurpose === 'Sale' && (
@@ -617,17 +627,17 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                                                         <div className="flex gap-1 bg-muted/40 p-1 rounded-xl scale-90 origin-right">
                                                             <button
                                                                 type="button"
-                                                                onClick={() => field.onChange('total')}
-                                                                className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${field.value === 'total' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
-                                                            >
-                                                                Total Price
-                                                            </button>
-                                                            <button
-                                                                type="button"
                                                                 onClick={() => field.onChange('sqft')}
                                                                 className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${field.value === 'sqft' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
                                                             >
                                                                 Per Sq.ft
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => field.onChange('cents')}
+                                                                className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${field.value === 'cents' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
+                                                            >
+                                                                Per Cent
                                                             </button>
                                                         </div>
                                                     )}
@@ -656,7 +666,28 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                                                     / sqft
                                                 </div>
                                             )}
+                                            {watchPriceUnit === 'cents' && (
+                                                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold text-sm">
+                                                    / cent
+                                                </div>
+                                            )}
                                         </div>
+                                        {calculateTotalValue() > 0 && (
+                                            <div className="flex items-center gap-2 p-3 bg-primary/5 rounded-xl border border-primary/10 mt-2 animate-in fade-in slide-in-from-top-1">
+                                                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                                    <IndianRupee className="w-4 h-4 text-primary" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-[10px] uppercase tracking-wider font-bold text-primary/60">Estimated Total Value</p>
+                                                    <p className="text-sm font-bold text-primary">
+                                                        ₹{calculateTotalValue().toLocaleString('en-IN')}
+                                                        <span className="text-[10px] text-muted-foreground ml-1 font-normal">
+                                                            (Based on {watchType?.includes('Plot') || watchType?.includes('Land') ? watchPlotArea : watchBuiltUpArea} {watchPriceUnit})
+                                                        </span>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
                                         {errors.price && <p className="text-destructive text-sm font-medium">{errors.price.message}</p>}
                                     </div>
 

@@ -62,18 +62,17 @@ export function PropertyProvider({ children }: { children: ReactNode }) {
             purpose: item.purpose,
             price: item.price,
             priceUnit: item.price_unit,
-            priceNegotiable: item.price_negotiable,
+            priceNegotiable: item.price_negotiable || false,
             maintenanceCharges: item.maintenance_charges,
-            securityDeposit: item.security_deposit,
-            foodIncluded: item.food_included,
+            securityDeposit: item.security_deposit || 0,
+            foodIncluded: item.food_included || false,
             locality: item.locality,
             city: item.city,
-            address: item.address,
-            landmark: item.landmark,
-            pincode: item.pincode,
+            landmark: item.landmark || '',
+            pincode: item.pincode || '',
             bhk: item.bhk,
-            bathrooms: item.bathrooms,
-            balconies: item.balconies,
+            bathrooms: item.bathrooms || 1,
+            balconies: item.balconies || 0,
             furnishing: item.furnishing,
             builtUpArea: item.built_up_area,
             carpetArea: item.carpet_area,
@@ -82,11 +81,11 @@ export function PropertyProvider({ children }: { children: ReactNode }) {
             facing: item.facing,
             parking: item.parking,
             ownershipType: item.ownership_type,
-            availableFrom: item.available_from,
-            propertyAge: item.property_age,
-            amenities: item.amenities,
-            images: item.images,
-            videoUrl: item.video_url,
+            availableFrom: item.available_from || '',
+            propertyAge: item.property_age || 'new',
+            amenities: item.amenities || [],
+            images: item.images || [],
+            videoUrl: item.video_url || '',
             verified: item.verified,
             status: item.status || 'active',
             postedDate: item.posted_date,
@@ -94,13 +93,13 @@ export function PropertyProvider({ children }: { children: ReactNode }) {
             sellerId: item.seller_id,
             sellerName: item.seller_name,
             sellerPhone: item.seller_phone,
-            pgDetails: item.pg_details,
+            pgDetails: item.pg_details || (item.pg_type ? { pgType: item.pg_type } : undefined),
             coordinates: item.coordinates,
-            plotArea: item.plot_area,
-            plotAreaUnit: item.plot_area_unit,
-            boundaryWall: item.boundary_wall,
-            roadWidth: item.road_width,
-            washroomCount: item.washroom_count
+            plotArea: item.plot_area || 0,
+            plotAreaUnit: item.plot_area_unit || 'sqft',
+            boundaryWall: item.boundary_wall || false,
+            roadWidth: item.road_width || '',
+            washroomCount: item.washroom_count || 0
           }));
           setProperties(mappedData as Property[]);
         }
@@ -165,18 +164,9 @@ export function PropertyProvider({ children }: { children: ReactNode }) {
       purpose: propertyData.purpose,
       price: propertyData.price,
       price_unit: propertyData.priceUnit,
-      price_negotiable: propertyData.priceNegotiable,
-      maintenance_charges: propertyData.maintenanceCharges,
-      security_deposit: propertyData.securityDeposit,
-      food_included: propertyData.foodIncluded,
       locality: propertyData.locality,
       city: propertyData.city,
-      address: propertyData.address,
-      landmark: propertyData.landmark,
-      pincode: propertyData.pincode,
       bhk: propertyData.bhk,
-      bathrooms: propertyData.bathrooms,
-      balconies: propertyData.balconies,
       furnishing: propertyData.furnishing,
       built_up_area: propertyData.builtUpArea,
       carpet_area: propertyData.carpetArea,
@@ -184,26 +174,18 @@ export function PropertyProvider({ children }: { children: ReactNode }) {
       total_floors: propertyData.totalFloors,
       facing: propertyData.facing,
       parking: propertyData.parking,
+      maintenance_charges: propertyData.maintenanceCharges,
       ownership_type: propertyData.ownershipType,
-      available_from: propertyData.availableFrom,
-      property_age: propertyData.propertyAge,
       amenities: propertyData.amenities,
       images: propertyData.images,
-      video_url: propertyData.videoUrl,
       verified: verified,
-      status: 'active',
       posted_date: postedDate,
       description: propertyData.description,
       seller_id: propertyData.sellerId,
       seller_name: propertyData.sellerName,
       seller_phone: propertyData.sellerPhone,
-      pg_details: propertyData.pgDetails,
-      coordinates: propertyData.coordinates,
-      plot_area: propertyData.plotArea,
-      plot_area_unit: propertyData.plotAreaUnit,
-      boundary_wall: propertyData.boundaryWall,
-      road_width: propertyData.roadWidth,
-      washroom_count: propertyData.washroomCount
+      pg_type: propertyData.pgDetails?.pgType,
+      coordinates: propertyData.coordinates
     };
 
     try {
@@ -304,17 +286,13 @@ export function PropertyProvider({ children }: { children: ReactNode }) {
 
   const archiveProperty = async (id: string, status: 'active' | 'archived') => {
     try {
-      const { error } = await supabase
-        .from('properties')
-        .update({ status })
-        .eq('id', id);
-
-      if (error) throw error;
+      // Note: 'status' column is missing in provided schema, 
+      // so we only update local state for now.
 
       setProperties((prev) =>
         prev.map((p) => (p.id === id ? { ...p, status } : p))
       );
-      toast.success(`Property ${status === 'archived' ? 'archived' : 'restored'} successfully`);
+      toast.success(`Property ${status === 'archived' ? 'archived' : 'restored'} successfully (Local only)`);
     } catch (err) {
       console.error('Error archiving property:', err);
       throw err;

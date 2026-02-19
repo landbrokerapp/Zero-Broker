@@ -39,11 +39,11 @@ export default function PostProperty() {
         type: formData.type as Property['type'],
         intent: intentMap[formData.purpose] || 'buy',
         purpose: formData.purpose,
-        price: parseInt(formData.price),
-        priceUnit: formData.purpose === 'Sale' ? 'total' : 'month',
+        price: parseInt(formData.price) || 0,
+        priceUnit: formData.priceUnit || (formData.purpose === 'Sale' ? 'total' : 'month'),
         priceNegotiable: formData.priceNegotiable,
-        maintenanceCharges: formData.maintenanceCharges ? parseInt(formData.maintenanceCharges) : undefined,
-        securityDeposit: formData.securityDeposit ? parseInt(formData.securityDeposit) : undefined,
+        maintenanceCharges: formData.maintenanceCharges ? parseInt(formData.maintenanceCharges) : 0,
+        securityDeposit: formData.securityDeposit ? parseInt(formData.securityDeposit) : 0,
         foodIncluded: formData.foodIncluded,
         locality: formData.area,
         city: formData.city,
@@ -86,9 +86,10 @@ export default function PostProperty() {
       await addProperty(propertyData);
       setIsSubmitted(true);
       toast.success('Property submitted for verification!');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Submit error:', error);
-      toast.error('Failed to submit property listing.');
+      const errorMessage = error.message || 'Failed to submit property listing.';
+      toast.error(errorMessage);
       throw error;
     }
   };

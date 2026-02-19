@@ -9,7 +9,7 @@ export interface Property {
   intent: 'buy' | 'rent' | 'pg';
   purpose?: 'Sale' | 'Rent' | 'PG';
   price: number;
-  priceUnit: 'month' | 'total' | 'sqft';
+  priceUnit: 'month' | 'total' | 'sqft' | 'cents';
   priceNegotiable?: boolean;
   maintenanceCharges?: number;
   securityDeposit?: number;

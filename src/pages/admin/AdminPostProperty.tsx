@@ -21,11 +21,11 @@ export default function AdminPostProperty() {
                 type: formData.type as Property['type'],
                 intent: intentMap[formData.purpose] || 'buy',
                 purpose: formData.purpose,
-                price: parseInt(formData.price),
-                priceUnit: formData.purpose === 'Sale' ? 'total' : 'month',
+                price: parseInt(formData.price) || 0,
+                priceUnit: formData.priceUnit || (formData.purpose === 'Sale' ? 'total' : 'month'),
                 priceNegotiable: formData.priceNegotiable,
-                maintenanceCharges: formData.maintenanceCharges ? parseInt(formData.maintenanceCharges) : undefined,
-                securityDeposit: formData.securityDeposit ? parseInt(formData.securityDeposit) : undefined,
+                maintenanceCharges: formData.maintenanceCharges ? parseInt(formData.maintenanceCharges) : 0,
+                securityDeposit: formData.securityDeposit ? parseInt(formData.securityDeposit) : 0,
                 foodIncluded: formData.foodIncluded,
                 locality: formData.area,
                 city: formData.city,
@@ -36,7 +36,7 @@ export default function AdminPostProperty() {
                 bathrooms: formData.bathrooms ? parseInt(formData.bathrooms) : undefined,
                 balconies: formData.balconies ? parseInt(formData.balconies) : undefined,
                 parking: formData.parking || 'None',
-                builtUpArea: parseInt(formData.builtUpArea),
+                builtUpArea: parseInt(formData.builtUpArea) || 0,
                 floor: formData.floor || 'G',
                 totalFloors: formData.totalFloors ? parseInt(formData.totalFloors) : 0,
                 furnishing: formData.furnishingStatus,
@@ -44,6 +44,7 @@ export default function AdminPostProperty() {
                 propertyAge: formData.propertyAge as Property['propertyAge'],
                 amenities: formData.amenities,
                 images: formData.images,
+                status: 'active',
                 description: formData.description || '',
                 sellerId: 'admin',
                 sellerName: 'System Admin',
@@ -61,9 +62,10 @@ export default function AdminPostProperty() {
             // Pass true for verified since it's an admin post
             await addProperty(propertyData, true);
             toast.success('Property published successfully as verified!');
-        } catch (error) {
+        } catch (error: any) {
             console.error('Admin submit error:', error);
-            toast.error('Failed to publish property');
+            const errorMessage = error.message || 'Failed to publish property';
+            toast.error(errorMessage);
             throw error;
         }
     };

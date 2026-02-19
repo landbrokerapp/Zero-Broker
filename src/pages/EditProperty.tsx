@@ -51,9 +51,10 @@ export default function EditProperty() {
             await updateProperty(id, formData);
             setIsSubmitted(true);
             toast.success('Property updated successfully!');
-        } catch (error) {
+        } catch (error: any) {
             console.error('Update error:', error);
-            toast.error('Failed to update property.');
+            const errorMessage = error.message || 'Failed to update property.';
+            toast.error(errorMessage);
         }
     };
 
@@ -114,6 +115,7 @@ export default function EditProperty() {
         landmark: property.landmark,
         pincode: property.pincode,
         price: property.price.toString(),
+        priceUnit: property.priceUnit,
         priceNegotiable: property.priceNegotiable,
         maintenanceCharges: property.maintenanceCharges?.toString(),
         securityDeposit: property.securityDeposit?.toString(),
