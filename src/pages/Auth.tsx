@@ -8,35 +8,45 @@ import { useAuth } from '@/contexts/AuthContext';
 export default function Auth() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { login } = useAuth();
-  
+  const { login, verifyOtp } = useAuth();
+
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [confirmationResult, setConfirmationResult] = useState<any>(null);
 
   const redirect = searchParams.get('redirect') || '/';
 
-  const handlePhoneSubmit = (e: React.FormEvent) => {
+  const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
+
     if (!/^[6-9]\d{9}$/.test(phone)) {
       setError('Please enter a valid 10-digit mobile number');
       return;
     }
-    
-    setStep('otp');
+
+    setIsLoading(true);
+    try {
+      const result = await login(phone);
+      setConfirmationResult(result);
+      setStep('otp');
+    } catch (err: any) {
+      setError(err.message || 'Failed to send OTP. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleOtpChange = (index: number, value: string) => {
     if (value.length > 1) {
       value = value.slice(-1);
     }
-    
+
     if (!/^\d*$/.test(value)) return;
-    
+
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
@@ -61,19 +71,23 @@ export default function Auth() {
     setIsLoading(true);
 
     const otpValue = otp.join('');
-    
+
     if (otpValue.length !== 6) {
       setError('Please enter the complete OTP');
       setIsLoading(false);
       return;
     }
 
-    const success = await login(phone, otpValue);
-    
-    if (success) {
-      navigate(redirect);
-    } else {
-      setError('Invalid OTP. Please use 123456 as the demo OTP.');
+    try {
+      const success = await verifyOtp(confirmationResult, otpValue);
+      if (success) {
+        navigate(redirect);
+      } else {
+        setError('Invalid OTP. Please check and try again.');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Verification failed.');
+    } finally {
       setIsLoading(false);
     }
   };
@@ -174,14 +188,6 @@ export default function Auth() {
                   {error && <p className="text-sm text-destructive mt-3 text-center">{error}</p>}
                 </div>
 
-                {/* Demo OTP Hint */}
-                <div className="flex items-center gap-2 p-4 bg-accent/10 rounded-xl text-sm">
-                  <CheckCircle className="w-5 h-5 text-accent shrink-0" />
-                  <span className="text-muted-foreground">
-                    Demo OTP: <span className="font-bold text-foreground">123456</span>
-                  </span>
-                </div>
-
                 <Button
                   type="submit"
                   disabled={isLoading}
@@ -212,7 +218,7 @@ export default function Auth() {
       {/* Right Panel - Image */}
       <div className="hidden lg:flex flex-1 bg-gradient-hero relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMtOS45NDEgMC0xOCA4LjA1OS0xOCAxOHM4LjA1OSAxOCAxOCAxOCAxOC04LjA1OSAxOC0xOC04LjA1OS0xOC0xOC0xOHoiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjEpIiBzdHJva2Utd2lkdGg9IjIiLz48L2c+PC9zdmc+')] opacity-30" />
-        
+
         <div className="relative flex items-center justify-center p-12">
           <div className="text-center">
             <div className="w-32 h-32 mx-auto mb-8 bg-primary-foreground/20 rounded-3xl flex items-center justify-center backdrop-blur-sm">

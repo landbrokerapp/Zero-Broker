@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
+import { auth, setupRecaptcha, sendOtp } from '@/lib/firebase';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 
 interface User {
   id: string;
@@ -13,7 +15,8 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (phone: string) => Promise<any>;
+  verifyOtp: (confirmationResult: any, otp: string) => Promise<boolean>;
   logout: () => Promise<void>;
   setUserRole: (role: 'user' | 'seller' | 'admin') => void;
   isAuthenticated: boolean;
@@ -28,62 +31,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // 1. Check active session from Supabase or localStorage
-    const checkSession = async () => {
-      try {
-        // Check for demo user or admin user in localStorage first
-        const demoUserStr = localStorage.getItem('demo_user');
-        const adminUserStr = localStorage.getItem('admin_user');
-
-        if (demoUserStr) {
-          const demoUser = JSON.parse(demoUserStr);
-          setUser(demoUser);
-          setIsLoading(false);
-          return;
-        }
-
-        if (adminUserStr) {
-          const adminUser = JSON.parse(adminUserStr);
-          setUser(adminUser);
-          setIsLoading(false);
-          return;
-        }
-
-        // Check Supabase session
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          const userData: User = {
-            id: session.user.id,
-            name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
-            username: session.user.email || '',
-            phone: session.user.phone || '',
-            email: session.user.email,
-            // Simple robust role check: if email is admin's, make them admin. 
-            // In a real app, you'd fetch this from a 'profiles' table.
-            role: session.user.email === 'admin@zerobroker.com' ? 'admin' : 'user'
-          };
-          setUser(userData);
-        }
-      } catch (error) {
-        console.error('Error checking session:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkSession();
-
-    // 2. Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) {
+    // Listen for Firebase Auth changes
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        // Map Firebase user to our User interface
         const userData: User = {
-          id: session.user.id,
-          name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
-          username: session.user.email || '',
-          phone: session.user.phone || '',
-          email: session.user.email,
-          role: session.user.email === 'admin@zerobroker.com' ? 'admin' : 'user'
+          id: firebaseUser.uid,
+          name: firebaseUser.displayName || 'User',
+          username: firebaseUser.phoneNumber || '',
+          phone: firebaseUser.phoneNumber || '',
+          role: 'user' // Default role
         };
+
+        // Check if role is stored in localStorage
+        const savedRole = localStorage.getItem(`role_${firebaseUser.uid}`);
+        if (savedRole) {
+          userData.role = savedRole as any;
+        }
+
         setUser(userData);
       } else {
         setUser(null);
@@ -91,63 +56,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
     });
 
-    return () => {
-      subscription.unsubscribe();
-    };
+    return () => unsubscribe();
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (phone: string): Promise<any> => {
     setIsLoading(true);
     try {
-      // Hardcoded admin bypass for "Shanmu" (Backward Compatibility)
-      if (email === 'Shanmu' && password === '123456') {
-        const adminUser: User = {
-          id: 'admin-1',
-          name: 'Shanmu',
-          username: 'Shanmu',
-          phone: '1234567890',
-          role: 'admin'
-        };
-        setUser(adminUser);
-        // We still use localStorage for the bypass user so they don't lose session on reload
-        // (This logic mirrors the previous manual persistence)
-        localStorage.setItem('admin_user', JSON.stringify(adminUser));
-        return true;
-      }
+      // Setup Recaptcha
+      const verifier = setupRecaptcha('recaptcha-container');
 
-      // OTP-based login (phone number + OTP)
-      // Check if email looks like a phone number (10 digits)
-      if (/^\d{10}$/.test(email) && password === '123456') {
-        const demoUser: User = {
-          id: `user-${email}`,
-          name: 'Demo User',
-          username: email,
-          phone: email,
-          role: 'user'
-        };
-        setUser(demoUser);
-        localStorage.setItem('demo_user', JSON.stringify(demoUser));
-        return true;
-      }
-
-      // Real Supabase Login (email + password)
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        console.error('Supabase login error:', error.message);
-        return false;
-      }
-
-      if (data.user) {
-        // onAuthStateChange will handle setting the user state
-        return true;
-      }
-      return false;
+      // Send OTP
+      const confirmationResult = await sendOtp(`+91${phone}`, verifier);
+      return confirmationResult;
     } catch (err) {
-      console.error('Login exception:', err);
+      console.error('Login error:', err);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const verifyOtp = async (confirmationResult: any, otp: string): Promise<boolean> => {
+    setIsLoading(true);
+    try {
+      const result = await confirmationResult.confirm(otp);
+      return !!result.user;
+    } catch (err) {
+      console.error('OTP Verification error:', err);
       return false;
     } finally {
       setIsLoading(false);
@@ -155,29 +90,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
-    // Clear local bypass users
+    await signOut(auth);
     localStorage.removeItem('admin_user');
     localStorage.removeItem('demo_user');
-
-    // Sign out from Supabase
-    await supabase.auth.signOut();
-
     setUser(null);
-    navigate('/admin/login');
+    navigate('/auth');
   };
 
   const setUserRole = (role: 'user' | 'seller' | 'admin') => {
     if (user) {
       const updatedUser = { ...user, role };
       setUser(updatedUser);
-      // Note: We don't persist this role change to Supabase here because that requires DB updates.
-      // This is local state only for the session.
+      localStorage.setItem(`role_${user.id}`, role);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, setUserRole, isAuthenticated: !!user, isLoading }}>
+    <AuthContext.Provider value={{ user, login, verifyOtp, logout, setUserRole, isAuthenticated: !!user, isLoading }}>
       {children}
+      <div id="recaptcha-container"></div>
     </AuthContext.Provider>
   );
 }
