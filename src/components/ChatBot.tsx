@@ -5,6 +5,9 @@ import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { tamilNaduCities, budgetRanges } from '@/data/mockProperties';
 import { useAuth } from '@/contexts/AuthContext';
+import { useProperties } from '@/contexts/PropertyContext';
+import { Property } from '@/data/mockProperties';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 
 interface Message {
   id: string;
@@ -102,8 +105,10 @@ function LocalityPicker({ city, onSelect }: { city: string; onSelect: (loc: stri
 export function ChatBot() {
   const [isOpen, setIsOpen] = useState(false);
   const { user } = useAuth();
+  const { addProperty } = useProperties();
   const [messages, setMessages] = useState<Message[]>([]);
   const [chatState, setChatState] = useState<ChatState>({ step: 1, mode: 'search', tempData: {} });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -304,15 +309,104 @@ export function ChatBot() {
 
     if (step === 600) {
       if (input.includes('Submit')) {
-        addMessage("🎉 Your property is successfully posted! Our team will review and make it live shortly.", 'bot');
-        setTimeout(() => {
-          setIsOpen(false);
-          setChatState({ step: 1, mode: 'search', tempData: {} });
-          setMessages([]);
-        }, 4000);
+        submitPropertyToDB();
       } else {
         addMessage("Okay, you can restart anytime.", 'bot');
+        setChatState({ step: 1, mode: 'search', tempData: {} });
       }
+    }
+  };
+
+  const submitPropertyToDB = async () => {
+    setIsSubmitting(true);
+    addMessage("Submitting your property... ⏳", 'bot');
+
+    try {
+      const { postPurpose, postType, postCity, postLocality, postBHK, postArea, postPrice, postImages, tempData } = chatState;
+
+      // Handle Image Uploads
+      let imageUrls: string[] = ['https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80'];
+      if (postImages && postImages.length > 0) {
+        try {
+          addMessage("Uploading your photos... 📸", 'bot');
+          const uploadedUrls = await Promise.all(
+            postImages.map(file => uploadToCloudinary(file))
+          );
+          if (uploadedUrls.length > 0) {
+            imageUrls = uploadedUrls;
+          }
+        } catch (uploadError) {
+          console.error('Image upload failed, using placeholder:', uploadError);
+        }
+      }
+
+      const intentMap: Record<string, 'buy' | 'rent' | 'pg'> = {
+        'Sale': 'buy',
+        'Rent': 'rent',
+        'PG': 'pg'
+      };
+
+      const propertyData: Omit<Property, 'id' | 'postedDate' | 'verified'> = {
+        title: `${postBHK ? postBHK + ' ' : ''}${postType} in ${postLocality}`,
+        type: (postType?.toLowerCase().includes('pg') ? 'pg'
+          : postType?.toLowerCase().includes('apartment') ? 'apartment'
+            : postType?.toLowerCase().includes('house') ? 'house'
+              : postType?.toLowerCase().includes('villa') ? 'villa'
+                : postType?.toLowerCase().includes('plot') ? 'plot'
+                  : postType?.toLowerCase().includes('commercial') ? 'commercial'
+                    : 'apartment') as Property['type'],
+        intent: intentMap[postPurpose!] || 'buy',
+        purpose: postPurpose,
+        price: parseInt(postPrice?.replace(/[^\d]/g, '') || '0') || 0,
+        priceUnit: postPurpose === 'Sale' ? 'total' : 'month',
+        priceNegotiable: true,
+        maintenanceCharges: 0,
+        securityDeposit: postPurpose === 'Sale' ? 0 : (parseInt(postPrice?.replace(/[^\d]/g, '') || '0') * 5),
+        foodIncluded: tempData?.pgFood?.toLowerCase().includes('yes'),
+        locality: postLocality || '',
+        city: postCity || '',
+        address: `${postLocality}, ${postCity}`,
+        landmark: '',
+        pincode: '',
+        bhk: postBHK || '',
+        bathrooms: parseInt(tempData?.bathrooms || '1') || 1,
+        balconies: 0,
+        parking: 'Available',
+        builtUpArea: parseInt(postArea?.replace(/[^\d]/g, '') || '0') || 0,
+        floor: '1',
+        totalFloors: 1,
+        furnishing: (tempData?.furnishing?.toLowerCase().includes('fully') ? 'fully-furnished'
+          : tempData?.furnishing?.toLowerCase().includes('semi') ? 'semi-furnished'
+            : 'unfurnished') as Property['furnishing'],
+        amenities: [],
+        images: imageUrls,
+        description: `Posted via ChatBot. ${postType} in ${postLocality}, ${postCity}.`,
+        sellerId: user?.id || 'anonymous',
+        sellerName: user?.name || 'User',
+        sellerPhone: user?.phone || '9999999999',
+        pgDetails: postPurpose === 'PG' ? {
+          pgType: (postType?.toLowerCase().includes('women') ? 'girls' : postType?.toLowerCase().includes('men') ? 'boys' : 'coliving') as any,
+          roomType: (tempData?.pgSharing?.toLowerCase().includes('single') ? 'single' : tempData?.pgSharing?.toLowerCase().includes('double') ? 'double' : 'shared') as any,
+          foodType: 'both',
+          electricityChargesIncluded: true
+        } : undefined
+      };
+
+      await addProperty(propertyData, false); // false = pending admin approval
+      addMessage("🎉 **Your property is successfully posted!** Our team will review and make it live shortly.", 'bot');
+
+      setTimeout(() => {
+        setIsOpen(false);
+        setChatState({ step: 1, mode: 'search', tempData: {} });
+        // Reset messages after a delay
+        setTimeout(() => setMessages([]), 1000);
+      }, 4000);
+    } catch (error: any) {
+      console.error('ChatBot submission error:', error);
+      const errorMsg = error.message || "Unknown database error";
+      addMessage(`❌ Submission failed: ${errorMsg}. Please try again.`, 'bot');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -554,7 +648,7 @@ export function ChatBot() {
                   placeholder="Type your answer or pick above…"
                   className="flex-1 px-4 py-2.5 bg-muted rounded-full text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
-                <Button type="submit" size="icon" className="rounded-full bg-gradient-hero hover:opacity-90 flex-shrink-0">
+                <Button type="submit" size="icon" className="rounded-full bg-gradient-hero hover:opacity-90 flex-shrink-0" disabled={isSubmitting}>
                   <Send className="w-4 h-4" />
                 </Button>
                 <input

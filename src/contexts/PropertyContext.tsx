@@ -21,7 +21,7 @@ interface PropertyContextType {
   setFilters: (filters: PropertyFilters) => void;
   filteredProperties: Property[];
   addProperty: (property: Omit<Property, 'id' | 'postedDate' | 'verified'>, verified?: boolean) => Promise<void>;
-  verifyProperty: (id: string) => Promise<void>;
+  verifyProperty: (id: string, status?: boolean) => Promise<void>;
   deleteProperty: (id: string) => Promise<void>;
   setProperties: React.Dispatch<React.SetStateAction<Property[]>>;
   userProperties: Property[];
@@ -205,23 +205,23 @@ export function PropertyProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const verifyProperty = async (id: string) => {
+  const verifyProperty = async (id: string, status = true) => {
     try {
       const { error } = await supabase
         .from('properties')
-        .update({ verified: true })
+        .update({ verified: status })
         .eq('id', id);
 
       if (error) throw error;
 
       setProperties((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, verified: true } : p))
+        prev.map((p) => (p.id === id ? { ...p, verified: status } : p))
       );
     } catch (err) {
       console.error('Error verifying property:', err);
       // Local fallback
       setProperties((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, verified: true } : p))
+        prev.map((p) => (p.id === id ? { ...p, verified: status } : p))
       );
     }
   };
