@@ -156,17 +156,27 @@ export function PropertyProvider({ children }: { children: ReactNode }) {
     const newId = `prop_${Date.now()}`;
     const postedDate = new Date().toISOString().split('T')[0];
 
+    const { data: { user } } = await supabase.auth.getUser();
+
     const newProperty = {
       id: newId,
       title: propertyData.title,
-      type: propertyData.type,
+      type: propertyData.type || null,
       intent: propertyData.intent,
       purpose: propertyData.purpose,
       price: propertyData.price,
       price_unit: propertyData.priceUnit,
+      price_negotiable: propertyData.priceNegotiable,
+      maintenance_charges: propertyData.maintenanceCharges,
+      security_deposit: propertyData.securityDeposit,
+      food_included: propertyData.foodIncluded,
       locality: propertyData.locality,
       city: propertyData.city,
+      landmark: propertyData.landmark,
+      pincode: propertyData.pincode,
       bhk: propertyData.bhk,
+      bathrooms: propertyData.bathrooms,
+      balconies: propertyData.balconies,
       furnishing: propertyData.furnishing,
       built_up_area: propertyData.builtUpArea,
       carpet_area: propertyData.carpetArea,
@@ -174,18 +184,25 @@ export function PropertyProvider({ children }: { children: ReactNode }) {
       total_floors: propertyData.totalFloors,
       facing: propertyData.facing,
       parking: propertyData.parking,
-      maintenance_charges: propertyData.maintenanceCharges,
       ownership_type: propertyData.ownershipType,
+      available_from: propertyData.availableFrom,
+      property_age: propertyData.propertyAge,
       amenities: propertyData.amenities,
       images: propertyData.images,
+      video_url: propertyData.videoUrl,
       verified: verified,
       posted_date: postedDate,
       description: propertyData.description,
       seller_id: propertyData.sellerId,
       seller_name: propertyData.sellerName,
       seller_phone: propertyData.sellerPhone,
-      pg_type: propertyData.pgDetails?.pgType,
-      coordinates: propertyData.coordinates
+      pg_details: propertyData.pgDetails,
+      coordinates: propertyData.coordinates,
+      plot_area: propertyData.plotArea,
+      plot_area_unit: propertyData.plotAreaUnit,
+      boundary_wall: propertyData.boundaryWall,
+      road_width: propertyData.roadWidth,
+      washroom_count: propertyData.washroomCount
     };
 
     try {
@@ -258,11 +275,43 @@ export function PropertyProvider({ children }: { children: ReactNode }) {
       // If a seller edits their property, it must be re-verified by admin
       const updates: any = {};
       if (propertyData.title) updates.title = propertyData.title;
+      if (propertyData.type) updates.type = propertyData.type;
+      if (propertyData.intent) updates.intent = propertyData.intent;
+      if (propertyData.purpose) updates.purpose = propertyData.purpose;
       if (propertyData.price) updates.price = propertyData.price;
-      if (propertyData.description) updates.description = propertyData.description;
-      if (propertyData.images) updates.images = propertyData.images;
+      if (propertyData.priceUnit) updates.price_unit = propertyData.priceUnit;
+      if (propertyData.priceNegotiable !== undefined) updates.price_negotiable = propertyData.priceNegotiable;
+      if (propertyData.maintenanceCharges !== undefined) updates.maintenance_charges = propertyData.maintenanceCharges;
+      if (propertyData.securityDeposit !== undefined) updates.security_deposit = propertyData.securityDeposit;
+      if (propertyData.foodIncluded !== undefined) updates.food_included = propertyData.foodIncluded;
       if (propertyData.locality) updates.locality = propertyData.locality;
       if (propertyData.city) updates.city = propertyData.city;
+      if (propertyData.landmark !== undefined) updates.landmark = propertyData.landmark;
+      if (propertyData.pincode !== undefined) updates.pincode = propertyData.pincode;
+      if (propertyData.bhk) updates.bhk = propertyData.bhk;
+      if (propertyData.bathrooms !== undefined) updates.bathrooms = propertyData.bathrooms;
+      if (propertyData.balconies !== undefined) updates.balconies = propertyData.balconies;
+      if (propertyData.furnishing) updates.furnishing = propertyData.furnishing;
+      if (propertyData.builtUpArea) updates.built_up_area = propertyData.builtUpArea;
+      if (propertyData.carpetArea !== undefined) updates.carpet_area = propertyData.carpetArea;
+      if (propertyData.floor) updates.floor = propertyData.floor;
+      if (propertyData.totalFloors !== undefined) updates.total_floors = propertyData.totalFloors;
+      if (propertyData.facing) updates.facing = propertyData.facing;
+      if (propertyData.parking) updates.parking = propertyData.parking;
+      if (propertyData.ownershipType) updates.ownership_type = propertyData.ownershipType;
+      if (propertyData.availableFrom !== undefined) updates.available_from = propertyData.availableFrom;
+      if (propertyData.propertyAge) updates.property_age = propertyData.propertyAge;
+      if (propertyData.amenities) updates.amenities = propertyData.amenities;
+      if (propertyData.images) updates.images = propertyData.images;
+      if (propertyData.videoUrl !== undefined) updates.video_url = propertyData.videoUrl;
+      if (propertyData.description) updates.description = propertyData.description;
+      if (propertyData.pgDetails) updates.pg_details = propertyData.pgDetails;
+      if (propertyData.coordinates) updates.coordinates = propertyData.coordinates;
+      if (propertyData.plotArea !== undefined) updates.plot_area = propertyData.plotArea;
+      if (propertyData.plotAreaUnit) updates.plot_area_unit = propertyData.plotAreaUnit;
+      if (propertyData.boundaryWall !== undefined) updates.boundary_wall = propertyData.boundaryWall;
+      if (propertyData.roadWidth !== undefined) updates.road_width = propertyData.roadWidth;
+      if (propertyData.washroomCount !== undefined) updates.washroom_count = propertyData.washroomCount;
 
       // Reset verified status on edit
       updates.verified = false;

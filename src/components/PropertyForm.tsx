@@ -5,7 +5,7 @@ import * as z from 'zod';
 import {
     Upload, MapPin, IndianRupee, Home, Building2, Bed, Maximize,
     Car, Compass, Image as ImageIcon, CheckCircle, ArrowLeft, X, ArrowRight, Droplets,
-    Video, Bath, Square, Layers, Calendar, Clock, Star, Shield, Info, Check, User, Ruler, Navigation, Map
+    Bath, Square, Layers, Calendar, Clock, Star, Shield, Info, Check, User, Ruler, Navigation, Map
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { uploadToCloudinary } from '@/lib/cloudinary';
@@ -93,7 +93,6 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-    const [videoFile, setVideoFile] = useState<File | null>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
@@ -101,7 +100,8 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
         resolver: zodResolver(formSchema),
         defaultValues: {
             purpose: 'Sale',
-            city: '',
+            city: 'Coimbatore',
+            area: 'Saravanampatti',
             furnishingStatus: 'semi-furnished',
             amenities: [],
             termsAccepted: false,
@@ -126,10 +126,18 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
     // Update area if city changes and current area is not in the new city's localities
     React.useEffect(() => {
         const currentArea = watch('area');
-        if (availableLocalities.length > 0 && !availableLocalities.includes(currentArea)) {
-            setValue('area', availableLocalities[0]);
+        if (availableLocalities.length > 0) {
+            if (watchCity === 'Coimbatore' && (!currentArea || !availableLocalities.includes(currentArea) || currentArea === availableLocalities[0])) {
+                if (availableLocalities.includes('Saravanampatti')) {
+                    setValue('area', 'Saravanampatti');
+                } else {
+                    setValue('area', availableLocalities[0]);
+                }
+            } else if (!availableLocalities.includes(currentArea)) {
+                setValue('area', availableLocalities[0]);
+            }
         }
-    }, [watchCity, availableLocalities, setValue, watch]);
+    }, [watchCity, availableLocalities, setValue]);
 
     // Clear type when purpose is PG (since PG doesn't need property type)
     React.useEffect(() => {
@@ -139,11 +147,13 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
 
         // Update price unit based on purpose
         if (watchPurpose === 'Rent' || watchPurpose === 'PG') {
-            setValue('priceUnit', 'month');
+            if (watchPriceUnit !== 'month') {
+                setValue('priceUnit', 'month');
+            }
         } else if (watchPriceUnit === 'month' || watchPriceUnit === 'total') {
             setValue('priceUnit', 'sqft');
         }
-    }, [watchPurpose, watchPriceUnit, setValue]);
+    }, [watchPurpose, setValue]);
 
     const calculateTotalValue = () => {
         const price = parseFloat(watchPrice) || 0;
@@ -207,16 +217,6 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
         setImagePreviews(prev => prev.filter((_, i) => i !== index));
     };
 
-    const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0];
-            if (file.size > 50 * 1024 * 1024) {
-                toast.error('Video too large (max 50MB)');
-                return;
-            }
-            setVideoFile(file);
-        }
-    };
 
     const handleUseMyLocation = async () => {
         setIsLoadingLocation(true);
@@ -316,15 +316,9 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                 uploadedImageUrls.push(url);
             }
 
-            let videoUrl = '';
-            if (videoFile) {
-                videoUrl = await uploadToCloudinary(videoFile);
-            }
-
             const submissionData = {
                 ...data,
                 images: uploadedImageUrls,
-                videoUrl,
             };
 
             await onSubmit(submissionData);
@@ -413,15 +407,27 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                                                 className="grid grid-cols-3 gap-4"
                                             >
                                                 {['Sale', 'Rent', 'PG'].map((p) => (
-                                                    <div
-                                                        key={p}
-                                                        className={cn(
-                                                            "flex items-center space-x-3 p-4 border rounded-2xl cursor-pointer transition-all",
-                                                            field.value === p ? "border-primary bg-primary/5 shadow-sm" : "border-border hover:border-primary/50"
-                                                        )}
-                                                    >
-                                                        <RadioGroupItem value={p} id={`purpose-${p.toLowerCase()}`} />
-                                                        <Label htmlFor={`purpose-${p.toLowerCase()}`} className="cursor-pointer font-semibold">{p}</Label>
+                                                    <div key={p}>
+                                                        <RadioGroupItem
+                                                            value={p}
+                                                            id={`purpose-${p.toLowerCase()}`}
+                                                            className="sr-only"
+                                                        />
+                                                        <Label
+                                                            htmlFor={`purpose-${p.toLowerCase()}`}
+                                                            className={cn(
+                                                                "flex items-center space-x-3 p-4 border rounded-2xl cursor-pointer transition-all hover:border-primary/50",
+                                                                field.value === p ? "border-primary bg-primary/5 shadow-sm" : "border-border"
+                                                            )}
+                                                        >
+                                                            <div className={cn(
+                                                                "w-5 h-5 rounded-full border flex items-center justify-center transition-colors",
+                                                                field.value === p ? "border-primary bg-primary shadow-[0_0_0_2px_white_inset]" : "border-muted-foreground/30"
+                                                            )}>
+                                                                {field.value === p && <div className="w-2.5 h-2.5 rounded-full bg-white" />}
+                                                            </div>
+                                                            <span className="font-semibold text-base">{p}</span>
+                                                        </Label>
                                                     </div>
                                                 ))}
                                             </RadioGroup>
@@ -1053,12 +1059,27 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                                                 render={({ field }) => (
                                                     <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                                         {['unfurnished', 'semi-furnished', 'fully-furnished'].map(v => (
-                                                            <div key={v} className={cn(
-                                                                "flex items-center space-x-3 p-4 border rounded-2xl cursor-pointer transition-all",
-                                                                field.value === v ? "border-primary bg-primary/5 shadow-sm" : "border-border hover:border-primary/50"
-                                                            )}>
-                                                                <RadioGroupItem value={v} id={v} />
-                                                                <Label htmlFor={v} className="cursor-pointer capitalize font-semibold">{v.replace('-', ' ')}</Label>
+                                                            <div key={v}>
+                                                                <RadioGroupItem
+                                                                    value={v}
+                                                                    id={v}
+                                                                    className="sr-only"
+                                                                />
+                                                                <Label
+                                                                    htmlFor={v}
+                                                                    className={cn(
+                                                                        "flex items-center space-x-3 p-4 border rounded-2xl cursor-pointer transition-all hover:border-primary/50",
+                                                                        field.value === v ? "border-primary bg-primary/5 shadow-sm" : "border-border"
+                                                                    )}
+                                                                >
+                                                                    <div className={cn(
+                                                                        "w-5 h-5 rounded-full border flex items-center justify-center transition-colors",
+                                                                        field.value === v ? "border-primary bg-primary shadow-[0_0_0_2px_white_inset]" : "border-muted-foreground/30"
+                                                                    )}>
+                                                                        {field.value === v && <div className="w-2.5 h-2.5 rounded-full bg-white" />}
+                                                                    </div>
+                                                                    <span className="capitalize font-semibold">{v.replace('-', ' ')}</span>
+                                                                </Label>
                                                             </div>
                                                         ))}
                                                     </RadioGroup>
@@ -1194,17 +1215,6 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                                             </div>
                                         </div>
                                     ))}</div>)}
-                                </div>
-                                <div className="space-y-4 pt-4">
-                                    <Label className="text-lg font-bold">Video Walkthrough (Optional)</Label>
-                                    <div className={cn("p-6 border-2 border-dashed rounded-3xl transition-all flex items-center gap-6", videoFile ? "bg-green-500/5 border-green-500/50" : "bg-muted/10 border-border")}>
-                                        <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center", videoFile ? "bg-green-500/20" : "bg-muted/30")}>
-                                            {videoFile ? <CheckCircle className="w-8 h-8 text-green-500" /> : <Video className="w-8 h-8 text-muted-foreground" />}
-                                        </div>
-                                        <div className="flex-1"><p className="font-bold">{videoFile ? videoFile.name : "No video selected"}</p><p className="text-sm text-muted-foreground">{videoFile ? (videoFile.size / (1024 * 1024)).toFixed(2) + " MB" : "MP4, max 50MB"}</p></div>
-                                        <Button type="button" variant="secondary" onClick={() => document.getElementById('video-upload')?.click()} className="rounded-xl">{videoFile ? "Change Video" : "Upload Video"}</Button>
-                                        <input id="video-upload" type="file" accept="video/*" className="hidden" onChange={handleVideoUpload} />
-                                    </div>
                                 </div>
                             </div>
                         )}

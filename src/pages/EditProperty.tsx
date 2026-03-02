@@ -48,7 +48,57 @@ export default function EditProperty() {
         if (!id) return;
 
         try {
-            await updateProperty(id, formData);
+            const intentMap: Record<string, 'buy' | 'rent' | 'pg'> = {
+                'Sale': 'buy',
+                'Rent': 'rent',
+                'PG': 'pg'
+            };
+
+            const updates: Partial<Property> = {
+                title: formData.title,
+                type: formData.type as Property['type'],
+                intent: intentMap[formData.purpose] || 'buy',
+                purpose: formData.purpose,
+                price: parseInt(formData.price) || 0,
+                priceUnit: formData.priceUnit,
+                priceNegotiable: formData.priceNegotiable,
+                maintenanceCharges: formData.maintenanceCharges ? parseInt(formData.maintenanceCharges) : 0,
+                securityDeposit: formData.securityDeposit ? parseInt(formData.securityDeposit) : 0,
+                foodIncluded: formData.foodIncluded,
+                locality: formData.area,
+                city: formData.city,
+                address: formData.address,
+                landmark: formData.landmark,
+                pincode: formData.pincode,
+                bhk: formData.bhk,
+                bathrooms: formData.bathrooms ? parseInt(formData.bathrooms) : undefined,
+                balconies: formData.balconies ? parseInt(formData.balconies) : undefined,
+                parking: formData.parking,
+                builtUpArea: parseInt(formData.builtUpArea) || 0,
+                floor: formData.floor,
+                totalFloors: formData.totalFloors ? parseInt(formData.totalFloors) : 0,
+                furnishing: formData.furnishingStatus,
+                propertyAge: formData.propertyAge as Property['propertyAge'],
+                amenities: formData.amenities,
+                images: formData.images,
+                description: formData.description,
+                pgDetails: formData.purpose === 'PG' ? {
+                    pgType: formData.pgType,
+                    roomType: formData.pgRoomType,
+                    foodType: formData.pgFoodType,
+                    electricityChargesIncluded: !!formData.pgElectricityIncluded,
+                    houseRules: formData.pgHouseRules,
+                    numBeds: formData.numBeds ? parseInt(formData.numBeds) : undefined
+                } : undefined,
+                plotArea: formData.plotArea ? parseInt(formData.plotArea) : undefined,
+                plotAreaUnit: formData.plotAreaUnit,
+                facing: formData.plotFacing,
+                boundaryWall: formData.boundaryWall,
+                roadWidth: formData.roadWidth,
+                washroomCount: formData.washroomCount ? parseInt(formData.washroomCount) : undefined
+            };
+
+            await updateProperty(id, updates);
             setIsSubmitted(true);
             toast.success('Property updated successfully!');
         } catch (error: any) {

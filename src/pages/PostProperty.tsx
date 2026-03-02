@@ -66,7 +66,6 @@ export default function PostProperty() {
         sellerId: user?.id || '',
         sellerName: user?.name || 'Property Owner',
         sellerPhone: user?.phone || '',
-        videoUrl: formData.videoUrl,
         pgDetails: formData.purpose === 'PG' ? {
           pgType: formData.pgType,
           roomType: formData.pgRoomType,

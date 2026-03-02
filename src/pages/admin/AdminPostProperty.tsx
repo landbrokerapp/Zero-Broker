@@ -49,14 +49,20 @@ export default function AdminPostProperty() {
                 sellerId: 'admin',
                 sellerName: 'System Admin',
                 sellerPhone: '9999999999',
-                videoUrl: formData.videoUrl,
                 pgDetails: formData.purpose === 'PG' ? {
                     pgType: formData.pgType,
                     roomType: formData.pgRoomType,
                     foodType: formData.pgFoodType,
                     electricityChargesIncluded: !!formData.pgElectricityIncluded,
-                    houseRules: formData.pgHouseRules
-                } : undefined
+                    houseRules: formData.pgHouseRules,
+                    numBeds: formData.numBeds ? parseInt(formData.numBeds) : undefined
+                } : undefined,
+                plotArea: formData.plotArea ? parseInt(formData.plotArea) : undefined,
+                plotAreaUnit: formData.plotAreaUnit,
+                facing: formData.plotFacing,
+                boundaryWall: formData.boundaryWall,
+                roadWidth: formData.roadWidth,
+                washroomCount: formData.washroomCount ? parseInt(formData.washroomCount) : undefined
             };
 
             // Pass true for verified since it's an admin post
