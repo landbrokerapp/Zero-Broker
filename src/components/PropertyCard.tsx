@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Bed, Maximize, BadgeCheck, Heart, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Property } from '@/data/mockProperties';
+import { MapPin, Bed, Maximize, BadgeCheck, Heart, ChevronLeft, ChevronRight, Home } from 'lucide-react';
+import { Property, propertyTypes } from '@/data/mockProperties';
 import { Badge } from '@/components/ui/badge';
 
 import { useFavorites } from '@/contexts/FavoritesContext';
@@ -144,9 +144,17 @@ export function PropertyCard({ property }: PropertyCardProps) {
             {property.title}
           </h3>
 
-          <div className="flex items-center gap-1.5 text-muted-foreground mb-3">
-            <MapPin className="w-4 h-4 text-accent" />
-            <span className="text-sm">{property.locality}, {property.city}</span>
+          <div className="flex flex-col gap-1 mb-3">
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <MapPin className="w-4 h-4 text-accent" />
+              <span className="text-sm line-clamp-1">{property.locality}, {property.city}</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <Home className="w-4 h-4 text-accent" />
+              <span className="text-sm font-medium">
+                {propertyTypes.find(t => t.value === property.type)?.label || property.type}
+              </span>
+            </div>
           </div>
 
           {/* Features */}

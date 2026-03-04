@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Navigation } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { matchLocalityInCity } from '@/lib/geolocation';
 
 interface LocationModalProps {
     children: React.ReactNode;
@@ -38,8 +39,8 @@ export function LocationModal({ children, onLocationSelect }: LocationModalProps
             //   locality       → fallback sublocality
             //   city/town      → last resort (city-level, not sub)
 
-            const city = a.city || a.town || a.municipality || '';
-            const sublocality =
+            const city = a.city || a.town || a.municipality || 'Coimbatore';
+            const detectedArea =
                 a.neighbourhood ||
                 a.suburb ||
                 a.quarter ||
@@ -50,9 +51,11 @@ export function LocationModal({ children, onLocationSelect }: LocationModalProps
                 city ||
                 '';
 
+            const sublocality = matchLocalityInCity(city, detectedArea, data.display_name);
+
             return {
                 sublocality: sublocality || data.display_name?.split(',')[0] || 'Current Location',
-                city: city || 'Coimbatore'
+                city: city
             };
 
         } catch (error) {

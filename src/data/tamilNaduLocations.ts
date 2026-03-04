@@ -38,7 +38,7 @@ export const tamilNaduCitiesDetailed: Record<string, LocalityDetail[]> = {
         { name: 'Thiruvanmiyur', subLocalities: ['Neelankarai', 'Palavakkam', 'Kottivakkam'] },
     ],
     'Coimbatore': [
-        { name: 'Saravanampatti', subLocalities: ['GKS Nagar', 'Janatha Nagar', 'Mani Nagar', 'Bankers Colony', 'Revenue Nagar', 'Sri Vigneshwara Nagar', 'Chitra Nagar'] },
+        { name: 'Saravanampatti', subLocalities: ['GKS Nagar', 'Janatha Nagar', 'Mani Nagar', 'Bankers Colony', 'Revenue Nagar', 'Sri Vigneshwara Nagar', 'Chitra Nagar', 'SNS Kalvi Nagar', 'Ward 33'] },
         { name: 'Peelamedu', subLocalities: ['Hopes College', 'Lakshmi Mills', 'Ram Nagar', 'Avinashi Road'] },
         { name: 'RS Puram', subLocalities: ['Race Course', 'Sivananda Colony', 'DB Road', 'Ramnagar'] },
         { name: 'Gandhipuram', subLocalities: ['Cross Cut Road', 'Big Bazaar Street', 'Oppanakara Street'] },

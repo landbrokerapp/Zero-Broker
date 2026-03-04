@@ -24,6 +24,7 @@ import { useProperties } from '@/contexts/PropertyContext';
 import { useLocationContext } from '@/contexts/LocationContext';
 import { Property } from '@/data/mockProperties';
 import { getLocalitiesForCity, tamilNaduCitiesDetailed } from '@/data/tamilNaduLocations';
+import { matchLocalityInCity } from '@/lib/geolocation';
 
 const propertyCategories = [
   { icon: Building2, label: 'Apartment' },
@@ -148,12 +149,15 @@ export default function Index() {
   };
 
   const handleLocationSelect = (coords: { lat: number; lng: number }, address?: string, city?: string) => {
-    setSearchLocation(address || 'Current Location');
-    setShowSuggestions(false);
-
     if (city && address) {
-      updateLocation(city, address);
+      const matchedCity = city.includes('Tamil Nadu') ? city.split(',')[0].trim() : city;
+      const matchedLocality = matchLocalityInCity(matchedCity, address);
+      setSearchLocation(matchedLocality);
+      updateLocation(matchedCity, matchedLocality);
+    } else {
+      setSearchLocation(address || 'Current Location');
     }
+    setShowSuggestions(false);
   };
 
   const handleOthersSubmit = (data: { propertyType: string; description: string }) => {

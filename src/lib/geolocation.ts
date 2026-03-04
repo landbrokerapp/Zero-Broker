@@ -1,5 +1,5 @@
-// Geolocation utilities for getting user's current location
 // and reverse geocoding to get address from coordinates
+import { getLocalitiesForCity } from "@/data/tamilNaduLocations";
 
 export interface Coordinates {
     latitude: number;
@@ -220,4 +220,35 @@ export const isInTamilNadu = (coords: Coordinates): boolean => {
         coords.longitude >= bounds.west &&
         coords.longitude <= bounds.east
     );
+};
+
+/**
+ * Robustly match a detected location name or full address to our known localities
+ */
+export const matchLocalityInCity = (city: string, detectedArea: string, fullAddress?: string): string => {
+    const localities = getLocalitiesForCity(city);
+    if (localities.length === 0) return detectedArea;
+
+    const lowerArea = detectedArea.toLowerCase();
+    const lowerFull = fullAddress?.toLowerCase() || '';
+
+    // 1. Try primary area match
+    let matched = localities.find(loc =>
+        loc.name.toLowerCase().includes(lowerArea) ||
+        lowerArea.includes(loc.name.toLowerCase()) ||
+        loc.subLocalities?.some(sub =>
+            sub.toLowerCase().includes(lowerArea) ||
+            lowerArea.includes(sub.toLowerCase())
+        )
+    );
+
+    // 2. Try full address match if primary fails
+    if (!matched && lowerFull) {
+        matched = localities.find(loc =>
+            lowerFull.includes(loc.name.toLowerCase()) ||
+            loc.subLocalities?.some(sub => lowerFull.includes(sub.toLowerCase()))
+        );
+    }
+
+    return matched ? matched.name : detectedArea;
 };

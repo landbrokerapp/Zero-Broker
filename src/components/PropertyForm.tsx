@@ -5,11 +5,11 @@ import * as z from 'zod';
 import {
     Upload, MapPin, IndianRupee, Home, Building2, Bed, Maximize,
     Car, Compass, Image as ImageIcon, CheckCircle, ArrowLeft, X, ArrowRight, Droplets,
-    Bath, Square, Layers, Calendar, Clock, Star, Shield, Info, Check, User, Ruler, Navigation, Map
+    Bath, Square, Layers, Calendar, Clock, Star, Shield, Info, Check, User, Camera, Navigation, Loader2, Map
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { uploadToCloudinary } from '@/lib/cloudinary';
-import { getCurrentLocationData, generateGoogleMapsLink, parseGoogleMapsLink } from '@/lib/geolocation';
+import { getCurrentLocationData, matchLocalityInCity, generateGoogleMapsLink, parseGoogleMapsLink } from '@/lib/geolocation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -100,8 +100,8 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
         resolver: zodResolver(formSchema),
         defaultValues: {
             purpose: 'Sale',
-            city: 'Coimbatore',
-            area: 'Saravanampatti',
+            city: '',
+            area: '',
             furnishingStatus: 'semi-furnished',
             amenities: [],
             termsAccepted: false,
@@ -124,17 +124,12 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
     }, [watchCity]);
 
     // Update area if city changes and current area is not in the new city's localities
+    // Keep area empty when city changes, don't auto-select
     React.useEffect(() => {
         const currentArea = watch('area');
-        if (availableLocalities.length > 0) {
-            if (watchCity === 'Coimbatore' && (!currentArea || !availableLocalities.includes(currentArea) || currentArea === availableLocalities[0])) {
-                if (availableLocalities.includes('Saravanampatti')) {
-                    setValue('area', 'Saravanampatti');
-                } else {
-                    setValue('area', availableLocalities[0]);
-                }
-            } else if (!availableLocalities.includes(currentArea)) {
-                setValue('area', availableLocalities[0]);
+        if (availableLocalities.length > 0 && currentArea) {
+            if (!availableLocalities.includes(currentArea)) {
+                setValue('area', '');
             }
         }
     }, [watchCity, availableLocalities, setValue]);
@@ -235,21 +230,17 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                 setValue('city', matchedCity);
 
                 // Try to match area/locality
+                const matchedAreaName = matchLocalityInCity(matchedCity, locationData.area, locationData.formattedAddress);
                 const localities = getLocalitiesForCity(matchedCity);
-                const matchedLocality = localities.find(loc =>
-                    loc.name.toLowerCase().includes(locationData.area.toLowerCase()) ||
-                    locationData.area.toLowerCase().includes(loc.name.toLowerCase()) ||
-                    loc.subLocalities?.some(sub =>
-                        sub.toLowerCase().includes(locationData.area.toLowerCase()) ||
-                        locationData.area.toLowerCase().includes(sub.toLowerCase())
-                    )
-                );
 
-                if (matchedLocality) {
-                    setValue('area', matchedLocality.name);
+                if (matchedAreaName) {
+                    setValue('area', matchedAreaName);
                 } else if (localities.length > 0) {
-                    // If no exact match, use first locality
-                    setValue('area', localities[0].name);
+                    // If no exact match, but localities exist, clear area to let user pick
+                    setValue('area', '');
+                } else {
+                    // Don't auto-set if no match found, let user pick
+                    setValue('area', '');
                 }
 
                 // Set pincode if available
@@ -261,7 +252,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                 const mapLink = generateGoogleMapsLink(locationData.coordinates);
                 setValue('mapLocation', mapLink);
 
-                toast.success(`Location set to ${matchedCity}${matchedLocality ? ', ' + matchedLocality.name : ''}`);
+                toast.success(`Location set to ${matchedCity}${matchedAreaName ? ', ' + matchedAreaName : ''}`);
             } else {
                 toast.warning(`Location detected: ${locationData.city}, ${locationData.state}. Please select a Tamil Nadu city manually.`);
             }

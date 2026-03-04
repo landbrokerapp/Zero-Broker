@@ -60,7 +60,7 @@ const CITY_META: Record<string, { emoji: string; tagline: string }> = {
 
 // ── City Picker Component ─────────────────────────────────────────────────────
 function CityPicker({ onSelect }: { onSelect: (city: string) => void }) {
-  const cities = Object.keys(tamilNaduCities);
+  const cities = ['Coimbatore'];
   return (
     <div className="mt-3 grid grid-cols-2 gap-2">
       {cities.map(city => {
@@ -206,6 +206,10 @@ export function ChatBot() {
     }
 
     if (step === 203) {
+      if (input !== 'Coimbatore') {
+        addMessage("Currently, we only support Coimbatore. 🏙️", 'bot', undefined, { cityPicker: true });
+        return;
+      }
       setChatState(prev => ({ ...prev, postCity: input, step: 204 }));
       // Show locality picker for selected city
       addMessage(`Great! Which area in ${input}?`, 'bot', undefined, { localityPicker: input });
@@ -477,8 +481,8 @@ export function ChatBot() {
 
     // Step 3 → City received → ask Locality
     if (step === 3) {
-      if (!tamilNaduCities[input]) {
-        addMessage(`I don't have data for "${input}" yet. Please pick a city below.`, 'bot', undefined, { cityPicker: true });
+      if (input !== 'Coimbatore') {
+        addMessage("Currently, we only support Coimbatore. 🏙️ Please pick it below.", 'bot', undefined, { cityPicker: true });
         return;
       }
       setChatState(prev => ({ ...prev, searchCity: input, step: 4 }));
