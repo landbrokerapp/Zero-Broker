@@ -56,7 +56,7 @@ const formSchema = z.object({
     // Land Specs
     plotArea: z.string().optional(),
     plotAreaUnit: z.enum(['sqft', 'cents']).default('sqft'),
-    plotFacing: z.string().optional(),
+    plotFacing: z.string().optional().nullable(),
     boundaryWall: z.boolean().optional(),
     roadWidth: z.string().optional(),
     roadLength: z.string().optional(),
@@ -300,19 +300,17 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
     const nextStep = async () => {
         let fieldsToValidate: any[] = [];
         if (activeStepId === 'basic') {
-            // For PG, only validate title and purpose. For others, also validate type
             fieldsToValidate = watchPurpose === 'PG' ? ['title', 'purpose'] : ['title', 'type', 'purpose'];
         }
         else if (activeStepId === 'location') fieldsToValidate = ['city', 'area'];
         else if (activeStepId === 'pricing') fieldsToValidate = ['price'];
         else if (activeStepId === 'specs') {
-            // For PG, no specific field validation needed
             if (watchPurpose === 'PG') {
-                fieldsToValidate = [];
+                fieldsToValidate = ['pgType', 'pgRoomType'];
             } else if (watchType === 'plot') {
                 fieldsToValidate = ['plotArea'];
             } else {
-                fieldsToValidate = ['builtUpArea'];
+                fieldsToValidate = ['builtUpArea', 'bhk'];
             }
         }
         else if (activeStepId === 'details') {
@@ -320,7 +318,12 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
         }
 
         const result = fieldsToValidate.length > 0 ? await trigger(fieldsToValidate as any) : true;
-        if (result) setStep(prev => prev + 1);
+        if (result) {
+            setStep(prev => prev + 1);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            toast.error('Please fix the errors before continuing');
+        }
     };
 
     const prevStep = () => setStep(prev => prev - 1);
@@ -373,10 +376,23 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                         const isActive = step === idx + 1;
                         return (
                             <React.Fragment key={idx}>
-                                <div className="flex flex-col items-center relative z-10">
+                                <div
+                                    className="flex flex-col items-center relative z-10 cursor-pointer group"
+                                    onClick={() => {
+                                        if (isCompleted || isActive || idx < step) {
+                                            setStep(idx + 1);
+                                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                                        } else {
+                                            // Allow jumping ahead if user knows what they're doing, 
+                                            // or keep it strict. Let's allow it but warn.
+                                            setStep(idx + 1);
+                                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                                        }
+                                    }}
+                                >
                                     <div
                                         className={cn(
-                                            "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300",
+                                            "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 group-hover:ring-4 group-hover:ring-primary/20",
                                             isCompleted ? "bg-green-500 text-white" :
                                                 isActive ? "bg-primary text-white scale-110 shadow-lg shadow-primary/20" :
                                                     "bg-muted text-muted-foreground"
@@ -1257,6 +1273,23 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
                                         </div>
                                     </div>
 
+                                    {/* Error Summary */}
+                                    {Object.keys(errors).length > 0 && (
+                                        <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-2xl space-y-2">
+                                            <div className="flex items-center gap-2 text-destructive font-bold text-sm">
+                                                <X className="w-4 h-4" />
+                                                <span>Listing cannot be submitted yet:</span>
+                                            </div>
+                                            <ul className="text-xs text-destructive/80 list-disc list-inside space-y-1 ml-1">
+                                                {Object.entries(errors).map(([key, error]) => (
+                                                    <li key={key} className="capitalize">{key.replace(/([A-Z])/g, ' $1')}: {error?.message as string}</li>
+                                                ))}
+                                                {imagePreviews.length < 3 && (
+                                                    <li>Images: Please upload at least 3 images</li>
+                                                )}
+                                            </ul>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="p-6 bg-primary/5 rounded-3xl border border-primary/20">
                                     <div className="flex items-start space-x-3">
