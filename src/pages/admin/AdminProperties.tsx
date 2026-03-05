@@ -36,9 +36,13 @@ export default function AdminProperties() {
         }
     };
 
-    const handleToggleVerify = (id: string, currentStatus: boolean) => {
-        verifyProperty(id, !currentStatus);
-        toast.success(`Property ${!currentStatus ? 'verified' : 'unverified'} successfully`);
+    const handleToggleVerify = async (id: string, currentStatus: boolean) => {
+        try {
+            await verifyProperty(id, !currentStatus);
+            toast.success(`Property ${!currentStatus ? 'verified' : 'unverified'} successfully`);
+        } catch (error) {
+            toast.error(`Failed to ${!currentStatus ? 'verify' : 'unverify'} property. Please check your permissions.`);
+        }
     };
 
     return (

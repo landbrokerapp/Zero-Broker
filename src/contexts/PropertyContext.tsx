@@ -247,10 +247,8 @@ export function PropertyProvider({ children }: { children: ReactNode }) {
       );
     } catch (err) {
       console.error('Error verifying property:', err);
-      // Local fallback
-      setProperties((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, verified: status } : p))
-      );
+      // Re-throw the error so the UI can catch it and show a toast
+      throw err;
     }
   };
 

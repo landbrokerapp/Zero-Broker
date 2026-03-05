@@ -181,6 +181,7 @@ export default function EditProperty() {
         furnishingStatus: property.furnishing,
         propertyAge: property.propertyAge,
         amenities: property.amenities,
+        images: property.images,
         description: property.description,
         plotArea: property.plotArea?.toString(),
         plotAreaUnit: property.plotAreaUnit,
@@ -209,7 +210,13 @@ export default function EditProperty() {
                     </p>
                 </div>
 
-                {initialData && <PropertyForm onSubmit={handlePropertySubmit} initialData={initialData} />}
+                {initialData && property && (
+                    <PropertyForm
+                        key={property.id}
+                        onSubmit={handlePropertySubmit}
+                        initialData={initialData}
+                    />
+                )}
             </main>
 
             <Footer />

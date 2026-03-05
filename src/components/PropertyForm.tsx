@@ -76,6 +76,7 @@ const formSchema = z.object({
     furnishingStatus: z.enum(['unfurnished', 'semi-furnished', 'fully-furnished']).optional(),
     propertyAge: z.string().optional(),
     amenities: z.array(z.string()).default([]),
+    images: z.array(z.string()).optional(),
     description: z.string().min(20, 'Description must be at least 20 characters'),
     termsAccepted: z.boolean().refine(val => val === true, 'You must accept the terms'),
 });
@@ -92,6 +93,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
     const [step, setStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+    const [existingImages, setExistingImages] = useState<string[]>([]);
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
     const [isDragging, setIsDragging] = useState(false);
     const [isLoadingLocation, setIsLoadingLocation] = useState(false);
@@ -108,6 +110,22 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
             ...initialData,
         },
     });
+
+    // Synchronize image state with initialData
+    React.useEffect(() => {
+        if (initialData?.images && Array.isArray(initialData.images)) {
+            const validImages = initialData.images.filter(img => typeof img === 'string');
+            if (validImages.length > 0) {
+                setExistingImages(validImages);
+                setImagePreviews(prev => {
+                    // Only initialize if we don't have existing or selected images yet
+                    // or if this is the first time we're getting valid images
+                    if (prev.length === 0) return validImages;
+                    return prev;
+                });
+            }
+        }
+    }, [initialData?.images]);
 
     const watchPurpose = watch('purpose');
     const watchType = watch('type');
@@ -208,8 +226,23 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
     };
 
     const removeImage = (index: number) => {
-        setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+        const previewToRemove = imagePreviews[index];
+
+        // Remove from previews anyway
         setImagePreviews(prev => prev.filter((_, i) => i !== index));
+
+        // If it was an existing image (URL string)
+        if (existingImages.includes(previewToRemove)) {
+            setExistingImages(prev => prev.filter(url => url !== previewToRemove));
+        } else {
+            // It was a newly selected file
+            // We need to find its index in the selectedFiles array
+            // The imagePreviews array is [existing... , new...]
+            const fileIndex = index - existingImages.length;
+            if (fileIndex >= 0) {
+                setSelectedFiles(prev => prev.filter((_, i) => i !== fileIndex));
+            }
+        }
     };
 
 
@@ -309,7 +342,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({ onSubmit, initialDat
 
             const submissionData = {
                 ...data,
-                images: uploadedImageUrls,
+                images: [...existingImages, ...uploadedImageUrls],
             };
 
             await onSubmit(submissionData);
